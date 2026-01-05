@@ -8,7 +8,6 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
     <style>
-        /* เน้นใช้ฟอนต์ Sarabun เพื่อลดอาการตัวอักษรเพี้ยน */
         body { font-family: 'Sarabun', sans-serif; background: #f4f4f4; margin: 0; padding: 10px; font-size: 14px; }
         
         #quote-container { 
@@ -43,7 +42,6 @@
         .freebie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
         .freebie-item { border-bottom: 1px solid #ccc; padding: 6px 0; min-height: 20px; outline: none; font-size: 13px; }
 
-        /* ปุ่มกด - ไม่ถูกบันทึกลงในภาพ */
         .btn-container { max-width: 500px; margin: 20px auto; padding: 0 10px; }
         .btn-share { 
             background: #28a745; color: white; padding: 16px; border: none; 
@@ -107,7 +105,6 @@
 </div>
 
 <script>
-    // ฟังก์ชันจัดการเครื่องหมายคอมมา
     function formatInput(el) {
         let val = el.value.replace(/,/g, '');
         if (!isNaN(val) && val !== "") {
@@ -151,26 +148,47 @@
     async function saveAsImage() {
         const container = document.getElementById('quote-container');
         const options = {
-            scale: 3,
+            scale: 2,
             useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff"
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            logging: false
         };
         
-        html2canvas(container, options).then(canvas => {
-            canvas.toBlob(blob => {
-                const file = new File([blob], "ใบเสนอราคา_Honda.png", { type: "image/png" });
-                if (navigator.share) {
-                    navigator.share({ files: [file], title: 'ใบเสนอราคา', text: 'ส่งใบเสนอราคาให้ลูกค้า' })
-                    .catch(e => console.log('Error sharing:', e));
-                } else {
-                    const link = document.createElement('a');
-                    link.download = 'ใบเสนอราคา.png';
-                    link.href = canvas.toDataURL();
-                    link.click();
-                }
-            }, 'image/png');
-        });
+        try {
+            const canvas = await html2canvas(container, options);
+            const imageData = canvas.toDataURL("image/png");
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+            if (navigator.share && isIOS) {
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], "Honda_Quote.png", { type: "image/png" });
+                    try {
+                        await navigator.share({ files: [file], title: 'ใบเสนอราคา Honda' });
+                    } catch (err) {
+                        openImageInNewTab(imageData);
+                    }
+                }, 'image/png');
+            } else {
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = `Honda_Quote_${new Date().getTime()}.png`;
+                link.click();
+            }
+        } catch (error) {
+            alert("ไม่สามารถสร้างรูปภาพได้");
+        }
+    }
+
+    function openImageInNewTab(dataUrl) {
+        const newTab = window.open();
+        newTab.document.write(`
+            <body style="margin:0; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:Sarabun,sans-serif;">
+                <p style="color:white; margin-bottom:10px;">กดค้างที่รูปภาพเพื่อ "บันทึกไปยังแอปรูปภาพ"</p>
+                <img src="${dataUrl}" style="max-width:90%; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+                <button onclick="window.close()" style="margin-top:20px; padding:10px 20px; border-radius:10px; border:none; background:#cc0000; color:white; font-weight:bold;">ปิดหน้าต่างนี้</button>
+            </body>
+        `);
     }
 
     function saveGifts() {
@@ -188,6 +206,5 @@
         updateAll();
     };
 </script>
-
 </body>
 </html>
