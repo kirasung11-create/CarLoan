@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบเสนอราคา Honda - บันทึกภาพชัด</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <style>
+        /* เน้นใช้ฟอนต์ Sarabun เพื่อลดอาการตัวอักษรเพี้ยน */
+        body { font-family: 'Sarabun', sans-serif; background: #f4f4f4; margin: 0; padding: 10px; font-size: 14px; }
+        
+        #quote-container { 
+            background: white; padding: 20px; border-radius: 0; 
+            max-width: 500px; margin: auto; border: 1px solid #ddd;
+        }
+
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #cc0000; padding-bottom: 5px; margin-bottom: 10px; }
+        .honda-logo { color: #cc0000; font-weight: bold; font-size: 22px; }
+        
+        .section-title { background: #f0f0f0; padding: 6px 10px; font-weight: bold; margin-top: 15px; border-radius: 5px; }
+        
+        .input-group { display: flex; align-items: center; margin-top: 10px; gap: 10px; }
+        .input-group label { flex: 1; font-weight: bold; }
+        .input-group input, .input-group select { 
+            flex: 1.5; padding: 10px; border: 1px solid #ccc; 
+            border-radius: 6px; outline: none; font-size: 14px; font-family: 'Sarabun', sans-serif;
+        }
+        
+        .result-box { background: #fff5f5; padding: 12px; border-radius: 6px; margin-top: 10px; border: 1px solid #ffdada; }
+        .highlight-text { color: #cc0000; font-weight: bold; font-size: 16px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { border-bottom: 2px solid #333; padding: 8px; text-align: center; font-size: 13px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
+        
+        .int-input { 
+            width: 70px; padding: 5px; text-align: center; border: 1px solid #ddd; 
+            border-radius: 4px; color: blue; font-weight: bold; font-family: 'Sarabun', sans-serif;
+        }
+
+        .freebie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .freebie-item { border-bottom: 1px solid #ccc; padding: 6px 0; min-height: 20px; outline: none; font-size: 13px; }
+
+        /* ปุ่มกด - ไม่ถูกบันทึกลงในภาพ */
+        .btn-container { max-width: 500px; margin: 20px auto; padding: 0 10px; }
+        .btn-share { 
+            background: #28a745; color: white; padding: 16px; border: none; 
+            border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="quote-container">
+    <div class="header">
+        <span class="honda-logo">HONDA</span>
+        <span id="currentDate"></span>
+    </div>
+
+    <div class="input-group">
+        <label>รุ่นรถ:</label>
+        <select id="carModelSelector" onchange="changeModel()">
+            <option value="0">-- ระบุรุ่นรถยนต์ --</option>
+            <option value="949000">HR-V e:HEV (E)</option>
+            <option value="1079000">HR-V e:HEV (EL)</option>
+            <option value="1179000">HR-V e:HEV (RS)</option>
+        </select>
+    </div>
+
+    <div class="input-group"><label>ราคารถ:</label><input type="text" id="basePrice" value="0" oninput="formatInput(this); updateAll()"></div>
+    <div class="input-group"><label>ส่วนลดรถ:</label><input type="text" id="discountPrice" value="0" oninput="formatInput(this); updateAll()"></div>
+    <div class="input-group"><label>อุปกรณ์เพิ่ม:</label><input type="text" id="extraEquip" value="0" oninput="formatInput(this); updateAll()"></div>
+
+    <div class="result-box">ราคาสุทธิ: <span id="netPrice" class="highlight-text">0</span> บาท</div>
+
+    <div class="section-title">เงื่อนไขการชำระเงิน</div>
+    <div class="input-group"><label>เงินดาวน์ (บาท):</label><input type="text" id="downAmount" value="0" oninput="formatInput(this); updateAll()"></div>
+    
+    <div class="result-box">ยอดจัดไฟแนนซ์: <span id="loanAmount" class="highlight-text">0</span> บาท</div>
+
+    <table>
+        <thead><tr><th>ปี (งวด)</th><th>ดอกเบี้ย (%)</th><th>งวดละ</th></tr></thead>
+        <tbody>
+            <tr><td>4 (48)</td><td><input type="number" step="0.01" class="int-input" id="r4" value="2.69" oninput="updateAll()"></td><td id="m4" class="highlight-text">0</td></tr>
+            <tr><td>5 (60)</td><td><input type="number" step="0.01" class="int-input" id="r5" value="2.79" oninput="updateAll()"></td><td id="m5" class="highlight-text">0</td></tr>
+            <tr><td>6 (72)</td><td><input type="number" step="0.01" class="int-input" id="r6" value="3.19" oninput="updateAll()"></td><td id="m6" class="highlight-text">0</td></tr>
+            <tr><td>7 (84)</td><td><input type="number" step="0.01" class="int-input" id="r7" value="3.59" oninput="updateAll()"></td><td id="m7" class="highlight-text">0</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-title">รายการอุปกรณ์ตกแต่งแถม</div>
+    <div class="freebie-grid">
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">1. </div>
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">4. </div>
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">2. </div>
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">5. </div>
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">3. </div>
+        <div class="freebie-item" contenteditable="true" oninput="saveGifts()">6. </div>
+    </div>
+</div>
+
+<div class="btn-container">
+    <button class="btn-share" onclick="saveAsImage()">📸 บันทึกภาพ</button>
+</div>
+
+<script>
+    // ฟังก์ชันจัดการเครื่องหมายคอมมา
+    function formatInput(el) {
+        let val = el.value.replace(/,/g, '');
+        if (!isNaN(val) && val !== "") {
+            el.value = Number(val).toLocaleString('en-US');
+        }
+    }
+
+    function parseValue(id) {
+        let val = document.getElementById(id).value.replace(/,/g, '');
+        return parseFloat(val) || 0;
+    }
+
+    function changeModel() {
+        const val = document.getElementById('carModelSelector').value;
+        if(val !== "0") { 
+            const baseInput = document.getElementById('basePrice');
+            baseInput.value = Number(val).toLocaleString('en-US'); 
+            updateAll(); 
+        }
+    }
+
+    function updateAll() {
+        const base = parseValue('basePrice');
+        const disc = parseValue('discountPrice');
+        const extra = parseValue('extraEquip');
+        const net = base - disc + extra;
+        document.getElementById('netPrice').innerText = net.toLocaleString();
+
+        const down = parseValue('downAmount');
+        const loan = net - down;
+        document.getElementById('loanAmount').innerText = loan.toLocaleString();
+
+        [4,5,6,7].forEach(y => {
+            const p = y === 4 ? 48 : y === 5 ? 60 : y === 6 ? 72 : 84;
+            const r = parseFloat(document.getElementById('r'+y).value) || 0;
+            const m = (loan + (loan * (r/100) * y)) / p;
+            document.getElementById('m'+y).innerText = Math.round(m).toLocaleString();
+        });
+    }
+
+    async function saveAsImage() {
+        const container = document.getElementById('quote-container');
+        const options = {
+            scale: 3,
+            useCORS: true,
+            logging: false,
+            backgroundColor: "#ffffff"
+        };
+        
+        html2canvas(container, options).then(canvas => {
+            canvas.toBlob(blob => {
+                const file = new File([blob], "ใบเสนอราคา_Honda.png", { type: "image/png" });
+                if (navigator.share) {
+                    navigator.share({ files: [file], title: 'ใบเสนอราคา', text: 'ส่งใบเสนอราคาให้ลูกค้า' })
+                    .catch(e => console.log('Error sharing:', e));
+                } else {
+                    const link = document.createElement('a');
+                    link.download = 'ใบเสนอราคา.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                }
+            }, 'image/png');
+        });
+    }
+
+    function saveGifts() {
+        const items = document.querySelectorAll('.freebie-item');
+        localStorage.setItem('hondaGiftsV3', JSON.stringify(Array.from(items).map(i => i.innerText)));
+    }
+
+    window.onload = function() {
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('th-TH');
+        const saved = JSON.parse(localStorage.getItem('hondaGiftsV3'));
+        if (saved) {
+            const items = document.querySelectorAll('.freebie-item');
+            saved.forEach((t, i) => { if(items[i]) items[i].innerText = t; });
+        }
+        updateAll();
+    };
+</script>
+
+</body>
+</html>
