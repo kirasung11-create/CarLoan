@@ -2,15 +2,15 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Honda Quotation - Custom Theme (V11)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Honda Quotation - Auto Save (V11.5 Full)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 90px; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } /* เพิ่มพื้นที่ด้านล่างป้องกันปุ่มบัง */
         .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-btn { color: #6b7280; font-size: 0.8rem; }
         .input-mobile { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; background: #fff; }
@@ -24,17 +24,22 @@
         .list-item { transition: all 0.2s; }
         .list-item:active { transform: scale(0.98); }
         
-        /* Color Picker Button Style */
         .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
         .color-dot:active { transform: scale(0.9); }
         .color-dot.selected { ring: 2px; ring-color: #cbd5e1; transform: scale(1.1); }
 
-        /* Table Input Style */
         .rate-table th { font-size: 0.75rem; color: #6b7280; padding: 4px; font-weight: normal; }
         .rate-table td { padding: 2px; }
         .rate-input { width: 100%; text-align: center; border: 1px solid #e5e7eb; border-radius: 4px; padding: 6px; font-size: 0.9rem; }
         .rate-input:focus { border-color: #2563eb; outline: none; background-color: #eff6ff; }
         .row-header { font-size: 0.8rem; font-weight: bold; color: #374151; text-align: center; background: #f9fafb; border-radius: 4px; padding: 4px 0; }
+        
+        /* ปรับแต่งสำหรับมือถือที่มีแถบ Home ด้านล่าง */
+        .bottom-nav-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: constant(safe-area-inset-bottom);
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -60,7 +65,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.12/1/26)จัดการรุ่นรถและสีที่นี่ ส่วนดอกเบี้ยไปที่แท็บ "ดอกเบี้ย"
+                <i class="fa-solid fa-circle-info"></i> (V.11.5) ระบบบันทึกข้อมูลลูกค้าให้อัตโนมัติแล้ว
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -100,6 +105,7 @@
             </div>
             
             <button onclick="resetToDefault()" class="w-full py-3 text-red-500 text-sm underline mt-8">ล้างข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น</button>
+             <button onclick="clearSession()" class="w-full py-2 text-gray-400 text-xs mt-2">ล้างเฉพาะข้อมูลที่กรอกค้างไว้</button>
         </div>
 
         <div id="view-interest" class="space-y-4 hidden animate-fade-in pb-20">
@@ -114,8 +120,8 @@
                 </select>
 
                 <div id="interestConfigPanel" class="hidden">
-                     <label class="text-xs text-gray-500 font-bold block mb-2">2. รายการแคมเปญ</label>
-                     <div class="flex gap-2 mb-3">
+                      <label class="text-xs text-gray-500 font-bold block mb-2">2. รายการแคมเปญ</label>
+                      <div class="flex gap-2 mb-3">
                         <input type="text" id="newCampaignName" class="input-mobile" placeholder="ชื่อแคมเปญ (เช่น ทางเลือกที่ 1)">
                         <button onclick="addCampaign()" class="bg-green-600 text-white px-4 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
                     </div>
@@ -160,7 +166,7 @@
             </div>
         </div>
 
-        <div id="view-editor" class="space-y-4 animate-fade-in">
+        <div id="view-editor" class="space-y-4 animate-fade-in pb-32">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-user text-green-600"></i> ข้อมูลลูกค้า</h3>
                 <div class="grid grid-cols-1 gap-3">
@@ -289,7 +295,7 @@
             </div>
         </div>
 
-        <div id="view-preview" class="hidden pb-20">
+        <div id="view-preview" class="hidden pb-48">
             <div id="quotation-card" class="bg-white rounded-none md:rounded-xl shadow-lg relative overflow-hidden text-gray-800 w-full" style="min-height: 600px;">
                 <div id="card-top-strip" class="h-3 bg-gradient-to-r from-blue-600 to-indigo-800"></div>
                 
@@ -372,27 +378,27 @@
     </div>
 
     <div id="imageModal" class="fixed inset-0 z-[60] hidden flex flex-col justify-center items-center p-4">
-        <div class="bg-white rounded-xl p-4 w-full max-w-sm relative">
+        <div class="bg-white rounded-xl p-4 w-full max-w-sm relative flex flex-col max-h-[90vh]">
             <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             <h3 class="text-center font-bold text-gray-800 mb-2">รูปภาพพร้อมแล้ว!</h3>
-            <div id="modalContent" class="border rounded-lg overflow-hidden shadow-inner bg-gray-100 min-h-[200px] flex items-center justify-center"><span class="text-gray-400 text-sm">กำลังสร้างรูปภาพ...</span></div>
-            <button onclick="closeModal()" class="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg">ปิดหน้าต่าง</button>
+            <div id="modalContent" class="border rounded-lg overflow-hidden shadow-inner bg-gray-100 flex-1 flex items-center justify-center overflow-auto"><span class="text-gray-400 text-sm">กำลังสร้างรูปภาพ...</span></div>
+            <p class="text-xs text-center text-gray-400 mt-2">กดค้างที่รูปเพื่อบันทึก</p>
+            <button onclick="closeModal()" class="w-full mt-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-bold">ปิดหน้าต่าง</button>
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full bg-white border-t p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-50 flex gap-2">
+    <div class="fixed bottom-0 left-0 w-full bg-white border-t p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-50 flex gap-2 bottom-nav-safe">
         <button onclick="switchTab('editor')" id="btn-back-edit" class="hidden flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-bold">กลับ</button>
         <button onclick="switchTab('preview')" id="btn-go-preview" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-200">ดูใบเสนอราคา</button>
         <button onclick="generateImage()" id="btn-save-img" class="hidden flex-1 bg-green-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200"><i class="fa-solid fa-download"></i> บันทึกภาพ</button>
     </div>
 
     <script>
-        // --- 1. DATA STRUCTURE (V11 - REAL DATA from CSV) ---
+        // --- 1. DATA STRUCTURE (COMPLETE V11) ---
         const tiers = [0, 10, 15, 20, 25];
         const terms = [48, 60, 72, 84];
 
-        // ------------------ RATE DEFINITIONS ------------------
-        
+        // --- RATE DEFINITIONS (ALL INCLUDED) ---
         // 1. CITY (Also City HB)
         const city_TL1 = {
             0: {48:1.79, 60:2.59, 72:3.19, 84:3.69},
@@ -401,7 +407,7 @@
             20: {48:0.39, 60:0.99, 72:1.69, 84:2.39},
             25: {48:0.00, 60:0.59, 72:1.29, 84:1.99}
         };
-        const city_TL2 = city_TL1; // Based on CSV, seemingly identical in snippet, will map same
+        const city_TL2 = city_TL1; 
         const city_TL3 = {
             0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
             10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
@@ -462,7 +468,7 @@
             20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
             25: {48:1.00, 60:1.99, 72:2.45, 84:2.99} 
         };
-        const accord_TL1_Diff25 = { ...crv_TL1, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} }; // Accord 25% is 0.99 vs CRV 1.00
+        const accord_TL1_Diff25 = { ...crv_TL1, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
 
         const crv_TL2 = {
             0: {48:3.99, 60:4.29, 72:4.59, 84:5.25},
@@ -471,73 +477,39 @@
             20: {48:2.29, 60:2.39, 72:2.69, 84:3.09},
             25: {48:1.99, 60:2.29, 72:2.59, 84:2.79}
         };
-        const crv_Sub_AY = hrv_Sub_AY; // Same rates
-        const crv_Sub_HLTC = hrv_Sub_HLTC; // Same rates
+        const crv_Sub_AY = hrv_Sub_AY; 
+        const crv_Sub_HLTC = hrv_Sub_HLTC; 
 
-        function createEmptyMatrix() {
-             let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 }; }); return m;
-        }
+        function createEmptyMatrix() { let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 }; }); return m; }
+        function createDefaultMatrix() { return createEmptyMatrix(); }
 
-        // ------------------ CAMPAIGN BUILDERS ------------------
-        
-        // City Builder
+        // --- CAMPAIGN BUILDERS ---
         const cityCampaigns = [
             { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] },
             { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] },
             { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] },
-            { 
-                name: "ทางเลือกเงินช่วย (Subsidy)", 
-                matrix: createEmptyMatrix(), 
-                finances: [ 
-                    { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC },
-                    { name: "AY (Krungsri)", matrix: city_Sub_AY }
-                ]
-            }
+            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC }, { name: "AY (Krungsri)", matrix: city_Sub_AY } ] }
         ];
 
-        // HRV/Civic Builder
         const hrvCampaigns = [
             { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: [] },
             { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: [] },
-            { 
-                name: "ทางเลือกเงินช่วย (Subsidy)", 
-                matrix: createEmptyMatrix(), 
-                finances: [ 
-                    { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC },
-                    { name: "AY (Krungsri)", matrix: hrv_Sub_AY }
-                ]
-            }
+            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: hrv_Sub_AY } ] }
         ];
 
-        // CRV Builder
         const crvCampaigns = [
             { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: [] },
             { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
-            { 
-                name: "ทางเลือกเงินช่วย (Subsidy)", 
-                matrix: createEmptyMatrix(), 
-                finances: [ 
-                    { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
-                    { name: "AY (Krungsri)", matrix: crv_Sub_AY }
-                ]
-            }
+            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] }
         ];
 
-         // Accord Builder
          const accordCampaigns = [
             { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: [] },
             { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
-            { 
-                name: "ทางเลือกเงินช่วย (Subsidy)", 
-                matrix: createEmptyMatrix(), 
-                finances: [ 
-                    { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
-                    { name: "AY (Krungsri)", matrix: crv_Sub_AY }
-                ]
-            }
+            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] }
         ];
 
-        // FULL HONDA DATA (V11)
+        // FULL HONDA DATA (V11 - RESTORED)
         let DEFAULT_DATA = {
             series: [
                 {
@@ -554,9 +526,9 @@
                     id: 2, name: "Honda City Hatchback",
                     subModels: [ { name: "S+", price: 599000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ],
                     colors: [ 
-                         { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
-                         { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
-                         { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
+                          { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
+                          { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
+                          { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
                     ],
                     campaigns: JSON.parse(JSON.stringify(cityCampaigns))
                 },
@@ -599,9 +571,8 @@
         };
 
         let appData = { series: [] };
-        // State variables for editing
-        let editSIdx = -1, editCampIdx = -1, editFinIdx = -1; // FinIdx -1 = Main Matrix
-        let currentThemeColor = '#2563eb'; // Default Blue
+        let editSIdx = -1, editCampIdx = -1, editFinIdx = -1; 
+        let currentThemeColor = '#2563eb'; 
 
         function initData() {
             const savedData = localStorage.getItem('carQuotationData_v11'); 
@@ -614,6 +585,9 @@
             }
             renderSeriesList();
             populateSeriesDropdown();
+            
+            // --- NEW: Restore Session ---
+            setTimeout(restoreSession, 500); 
         }
 
         function saveData() {
@@ -623,8 +597,112 @@
             if(editSIdx !== -1) renderDetailLists();
         }
 
+        // --- NEW: SESSION MANAGEMENT (AUTO SAVE) ---
+        function saveSession() {
+            const sessionData = {
+                custName: document.getElementById('custName').value,
+                custTel: document.getElementById('custTel').value,
+                theme: currentThemeColor,
+                mode: currentMode,
+                seriesIdx: document.getElementById('selectSeries').value,
+                subIdx: document.getElementById('selectSubModel').value,
+                colorIdx: document.getElementById('selectColor').value,
+                discount: document.getElementById('discount').value,
+                
+                // Finance
+                campIdx: document.getElementById('selectCampaign').value,
+                finIdx: document.getElementById('selectFinanceCo').value,
+                intDiscount: document.getElementById('interestDiscount').value,
+                downPercent: document.getElementById('downPercent').value,
+                downAmount: document.getElementById('downAmount').value,
+                
+                // Expenses
+                reg: document.getElementById('regFee').value,
+                ins: document.getElementById('insurance').value,
+                red: document.getElementById('redPlate').value,
+                adv: document.getElementById('advInstallment').value,
+                vat: document.getElementById('vatFee').value,
+                acc: document.getElementById('accFee').value,
+                book: document.getElementById('bookingDeduct').value,
+                gift: document.getElementById('giftList').value
+            };
+            localStorage.setItem('quotationSession_v1', JSON.stringify(sessionData));
+        }
+
+        function restoreSession() {
+            const raw = localStorage.getItem('quotationSession_v1');
+            if(!raw) return;
+            try {
+                const s = JSON.parse(raw);
+                
+                // Basic Info
+                if(s.custName) document.getElementById('custName').value = s.custName;
+                if(s.custTel) document.getElementById('custTel').value = s.custTel;
+                if(s.theme) setTheme(s.theme);
+                if(s.mode) setMode(s.mode);
+
+                // Car Selection Chain
+                if(s.seriesIdx && s.seriesIdx != -1) {
+                    document.getElementById('selectSeries').value = s.seriesIdx;
+                    onSeriesChange(); // Trigger sub load
+                    
+                    if(s.subIdx && s.subIdx != -1) {
+                        document.getElementById('selectSubModel').value = s.subIdx;
+                        onSubModelChange();
+                    }
+                    if(s.colorIdx && s.colorIdx != -1) {
+                        document.getElementById('selectColor').value = s.colorIdx;
+                        onColorChange();
+                    }
+                    if(s.campIdx && s.campIdx != -1) {
+                        document.getElementById('selectCampaign').value = s.campIdx;
+                        onCampaignSelect(); // Trigger finance load
+                        
+                        if(s.finIdx) { // Might be empty string or index
+                            document.getElementById('selectFinanceCo').value = s.finIdx;
+                        }
+                    }
+                }
+
+                // Numeric Values
+                if(s.discount) document.getElementById('discount').value = s.discount;
+                if(s.intDiscount) document.getElementById('interestDiscount').value = s.intDiscount;
+                
+                // Down Payment
+                if(s.downAmount) document.getElementById('downAmount').value = s.downAmount;
+                if(s.downPercent) document.getElementById('downPercent').value = s.downPercent;
+                
+                // Expenses
+                if(s.reg) document.getElementById('regFee').value = s.reg;
+                if(s.ins) document.getElementById('insurance').value = s.ins;
+                if(s.red) document.getElementById('redPlate').value = s.red;
+                if(s.adv) document.getElementById('advInstallment').value = s.adv;
+                if(s.vat) document.getElementById('vatFee').value = s.vat;
+                if(s.acc) document.getElementById('accFee').value = s.acc;
+                if(s.book) document.getElementById('bookingDeduct').value = s.book;
+                if(s.gift) document.getElementById('giftList').value = s.gift;
+
+                // Final Recalculate
+                updateDownPercent(); // Sync % based on Amount
+                calculateInterestAuto();
+                calculate();
+                updateCustomerInfo();
+                renderGifts();
+
+            } catch(e) {
+                console.error("Session restore failed", e);
+            }
+        }
+        
+        function clearSession() {
+            if(confirm('ล้างข้อมูลที่กรอกค้างไว้ทั้งหมด? (ฐานข้อมูลรถจะไม่หาย)')) {
+                localStorage.removeItem('quotationSession_v1');
+                location.reload();
+            }
+        }
+
         function resetToDefault() {
-            if(confirm('รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น? ข้อมูลที่เพิ่มเองจะหายไป')) {
+            if(confirm('รีเซ็ตฐานข้อมูลรุ่นรถทั้งหมด? ข้อมูลที่เพิ่มเองจะหายไป')) {
                 localStorage.removeItem('carQuotationData_v11');
                 initData();
                 alert("รีเซ็ตเรียบร้อย");
@@ -635,22 +713,14 @@
         function setTheme(color) {
             currentThemeColor = color;
             document.getElementById('customThemeColor').value = color;
-            
-            // Update Preview Elements
-            // 1. Top Strip (Gradient based on color)
             document.getElementById('card-top-strip').style.background = `linear-gradient(to right, ${color}, #1e293b)`;
-            
-            // 2. Headings
             document.getElementById('head-cust-info').style.color = color;
-            
-            // 3. Badge
             const badge = document.getElementById('badge-mode');
             badge.style.color = color;
-            badge.style.borderColor = color + '40'; // add transparency
-            badge.style.backgroundColor = color + '15'; // very light bg
-            
-            // 4. Table Border
+            badge.style.borderColor = color + '40';
+            badge.style.backgroundColor = color + '15';
             document.getElementById('head-schedule').style.borderLeftColor = color;
+            saveSession(); 
         }
 
         // --- INTEREST TAB LOGIC ---
@@ -659,21 +729,16 @@
             const list = document.getElementById('campaignList');
             const panel = document.getElementById('interestConfigPanel');
             const mgrPanel = document.getElementById('financeManagerPanel');
-            
             list.innerHTML = '';
             mgrPanel.classList.add('hidden');
-
             if(sIdx == -1) { panel.classList.add('hidden'); return; }
             panel.classList.remove('hidden');
-
             const series = appData.series[sIdx];
             if(!series.campaigns) series.campaigns = [];
-
             series.campaigns.forEach((camp, idx) => {
                 const finCount = camp.finances ? camp.finances.length : 0;
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-3 bg-white border border-gray-200 rounded shadow-sm";
-                
                 div.innerHTML = `
                     <div class="flex-1 cursor-pointer" onclick="openFinanceManager(${sIdx}, ${idx})">
                         <div class="font-bold text-gray-800">${camp.name}</div>
@@ -682,120 +747,76 @@
                     <div class="flex gap-2">
                          <button onclick="openFinanceManager(${sIdx}, ${idx})" class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold">จัดการไฟแนนซ์</button>
                          <button onclick="deleteCampaign(${sIdx}, ${idx})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
+                    </div>`;
                 list.appendChild(div);
             });
         }
-
         function addCampaign() {
             const sIdx = document.getElementById('selectSeriesInterest').value;
             const name = document.getElementById('newCampaignName').value.trim();
             if(sIdx != -1 && name) {
                 appData.series[sIdx].campaigns.push({ name: name, matrix: createDefaultMatrix(), finances: [] });
                 document.getElementById('newCampaignName').value = '';
-                saveData();
-                renderCampaignsList();
+                saveData(); renderCampaignsList();
             }
         }
-
         function deleteCampaign(sIdx, cIdx) {
             if(confirm('ลบแคมเปญนี้?')) {
                 appData.series[sIdx].campaigns.splice(cIdx, 1);
-                saveData();
-                renderCampaignsList();
+                saveData(); renderCampaignsList();
             }
         }
 
-        // --- FINANCE & MATRIX MANAGER ---
+        // --- FINANCE MANAGER ---
         function openFinanceManager(sIdx, cIdx) {
-            editSIdx = sIdx; editCampIdx = cIdx; editFinIdx = -1; // Reset to main
+            editSIdx = sIdx; editCampIdx = cIdx; editFinIdx = -1;
             const camp = appData.series[sIdx].campaigns[cIdx];
             if(!camp.finances) camp.finances = [];
-
             document.getElementById('financeManagerPanel').classList.remove('hidden');
             document.getElementById('mgrCampName').innerText = "จัดการ: " + camp.name;
-            document.getElementById('matrixContainer').classList.add('hidden'); // Hide matrix until selected
-            
+            document.getElementById('matrixContainer').classList.add('hidden');
             renderFinanceListItems();
         }
-
-        function closeFinanceManager() {
-            document.getElementById('financeManagerPanel').classList.add('hidden');
-            editCampIdx = -1;
-        }
-
+        function closeFinanceManager() { document.getElementById('financeManagerPanel').classList.add('hidden'); editCampIdx = -1; }
         function renderFinanceListItems() {
             const camp = appData.series[editSIdx].campaigns[editCampIdx];
             const list = document.getElementById('financeListItems');
             list.innerHTML = '';
-
-            // 1. General Matrix Option
             const genDiv = document.createElement('div');
             genDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === -1 ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
             genDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">มาตรฐาน (General Rate)</span> <span class="text-xs text-gray-400">แก้ไขเรท</span>`;
             genDiv.onclick = () => loadMatrix(-1);
             list.appendChild(genDiv);
-
-            // 2. Finance Options
             camp.finances.forEach((fin, fIdx) => {
                 const fDiv = document.createElement('div');
                 fDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === fIdx ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
-                fDiv.innerHTML = `
-                    <span class="text-sm text-gray-700">${fin.name}</span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-blue-500 underline" onclick="event.stopPropagation(); loadMatrix(${fIdx})">แก้ไขเรท</span>
-                        <button class="text-red-400 hover:text-red-600" onclick="event.stopPropagation(); deleteFinance(${fIdx})"><i class="fa-solid fa-times"></i></button>
-                    </div>
-                `;
+                fDiv.innerHTML = `<span class="text-sm text-gray-700">${fin.name}</span> <div class="flex items-center gap-2"><span class="text-xs text-blue-500 underline" onclick="event.stopPropagation(); loadMatrix(${fIdx})">แก้ไขเรท</span><button class="text-red-400 hover:text-red-600" onclick="event.stopPropagation(); deleteFinance(${fIdx})"><i class="fa-solid fa-times"></i></button></div>`;
                 fDiv.onclick = () => loadMatrix(fIdx);
                 list.appendChild(fDiv);
             });
         }
-
         function addFinanceToCamp() {
             const name = document.getElementById('newFinName').value.trim();
             if(name && editSIdx!=-1) {
-                appData.series[editSIdx].campaigns[editCampIdx].finances.push({
-                    name: name,
-                    matrix: createDefaultMatrix()
-                });
-                document.getElementById('newFinName').value = '';
-                saveData();
-                renderFinanceListItems();
+                appData.series[editSIdx].campaigns[editCampIdx].finances.push({ name: name, matrix: createDefaultMatrix() });
+                document.getElementById('newFinName').value = ''; saveData(); renderFinanceListItems();
             }
         }
-
         function deleteFinance(fIdx) {
             if(confirm('ลบไฟแนนซ์นี้?')) {
                 appData.series[editSIdx].campaigns[editCampIdx].finances.splice(fIdx, 1);
                 if(editFinIdx === fIdx) { editFinIdx = -1; document.getElementById('matrixContainer').classList.add('hidden'); }
-                saveData();
-                renderFinanceListItems();
+                saveData(); renderFinanceListItems();
             }
         }
-
         function loadMatrix(fIdx) {
-            editFinIdx = fIdx;
-            renderFinanceListItems(); // Update active highlight
-            
+            editFinIdx = fIdx; renderFinanceListItems();
             const camp = appData.series[editSIdx].campaigns[editCampIdx];
-            let targetMatrix, targetName;
-
-            if (fIdx === -1) {
-                targetMatrix = camp.matrix;
-                targetName = "General Rate";
-            } else {
-                targetMatrix = camp.finances[fIdx].matrix;
-                targetName = camp.finances[fIdx].name;
-            }
-
+            let targetMatrix = (fIdx === -1) ? camp.matrix : camp.finances[fIdx].matrix;
+            let targetName = (fIdx === -1) ? "General Rate" : camp.finances[fIdx].name;
             document.getElementById('matrixContainer').classList.remove('hidden');
             document.getElementById('matrixTitle').innerText = "กำลังแก้ไขเรทของ: " + targetName;
-
-            const tbody = document.getElementById('rateMatrixBody');
-            tbody.innerHTML = '';
-            
+            const tbody = document.getElementById('rateMatrixBody'); tbody.innerHTML = '';
             tiers.forEach(tier => {
                 const tr = document.createElement('tr');
                 let rowHtml = `<td class="row-header">${tier}%</td>`;
@@ -803,72 +824,49 @@
                     const val = (targetMatrix[tier] && targetMatrix[tier][term]) ? targetMatrix[tier][term] : 0;
                     rowHtml += `<td><input type="number" step="0.01" class="rate-input" data-tier="${tier}" data-term="${term}" value="${val}"></td>`;
                 });
-                tr.innerHTML = rowHtml;
-                tbody.appendChild(tr);
+                tr.innerHTML = rowHtml; tbody.appendChild(tr);
             });
         }
-
         function saveCurrentMatrix() {
             const inputs = document.querySelectorAll('.rate-input');
-            let newMatrix = {};
-            tiers.forEach(t => newMatrix[t] = {});
+            let newMatrix = {}; tiers.forEach(t => newMatrix[t] = {});
             inputs.forEach(input => {
-                const t = input.dataset.tier;
-                const tm = input.dataset.term;
+                const t = input.dataset.tier, tm = input.dataset.term;
                 newMatrix[t][tm] = parseFloat(input.value) || 0;
             });
-
-            if (editFinIdx === -1) {
-                appData.series[editSIdx].campaigns[editCampIdx].matrix = newMatrix;
-            } else {
-                appData.series[editSIdx].campaigns[editCampIdx].finances[editFinIdx].matrix = newMatrix;
-            }
-            saveData();
-            alert("บันทึกตารางดอกเบี้ยเรียบร้อย");
+            if (editFinIdx === -1) appData.series[editSIdx].campaigns[editCampIdx].matrix = newMatrix;
+            else appData.series[editSIdx].campaigns[editCampIdx].finances[editFinIdx].matrix = newMatrix;
+            saveData(); alert("บันทึกตารางดอกเบี้ยเรียบร้อย");
         }
 
-
-        // --- SETTINGS (Series/Color) LOGIC ---
+        // --- SETTINGS SERIES/COLOR ---
         function renderSeriesList() {
             const list = document.getElementById('seriesList');
             const selectInterest = document.getElementById('selectSeriesInterest');
             const currentSel = selectInterest.value;
-
-            list.innerHTML = '';
-            selectInterest.innerHTML = '<option value="-1">-- เลือกรุ่นรถ --</option>';
-
+            list.innerHTML = ''; selectInterest.innerHTML = '<option value="-1">-- เลือกรุ่นรถ --</option>';
             appData.series.forEach((s, index) => {
                 const div = document.createElement('div');
                 div.className = 'list-item flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:border-blue-400';
                 div.onclick = (e) => { if(e.target.closest('.delete-btn')) return; editSeries(index); };
-                div.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-folder text-blue-500"></i>
-                        <div><div class="font-bold text-gray-800">${s.name}</div><div class="text-xs text-gray-500">${s.subModels.length} รุ่น, ${s.campaigns ? s.campaigns.length : 0} แคมเปญ</div></div>
-                    </div>
-                    <button class="delete-btn text-red-400 hover:text-red-600 p-2" onclick="deleteSeries(${index})"><i class="fa-solid fa-trash"></i></button>
-                `;
+                div.innerHTML = `<div class="flex items-center gap-2"><i class="fa-solid fa-folder text-blue-500"></i><div><div class="font-bold text-gray-800">${s.name}</div><div class="text-xs text-gray-500">${s.subModels.length} รุ่น, ${s.campaigns ? s.campaigns.length : 0} แคมเปญ</div></div></div><button class="delete-btn text-red-400 hover:text-red-600 p-2" onclick="deleteSeries(${index})"><i class="fa-solid fa-trash"></i></button>`;
                 list.appendChild(div);
-
                 const opt = document.createElement('option'); opt.value = index; opt.text = s.name; selectInterest.appendChild(opt);
             });
             selectInterest.value = currentSel;
         }
         function addSeries() {
             const name = document.getElementById('newSeriesName').value.trim();
-            if(name) { appData.series.push({ id: Date.now(), name: name, subModels: [], colors: [], campaigns: JSON.parse(JSON.stringify(defaultCampaigns)) }); document.getElementById('newSeriesName').value = ''; saveData(); }
+            if(name) { appData.series.push({ id: Date.now(), name: name, subModels: [], colors: [], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) }); document.getElementById('newSeriesName').value = ''; saveData(); }
         }
         function deleteSeries(index) { if(confirm('ลบข้อมูลนี้?')) { appData.series.splice(index, 1); if(editSIdx === index) closeSeriesDetail(); saveData(); } }
-        
         function editSeries(index) {
             editSIdx = index;
             document.getElementById('seriesDetailPanel').classList.remove('hidden');
             document.getElementById('editingSeriesName').innerText = "จัดการ: " + appData.series[index].name;
-            renderDetailLists();
-            document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' });
+            renderDetailLists(); document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' });
         }
         function closeSeriesDetail() { editSIdx = -1; document.getElementById('seriesDetailPanel').classList.add('hidden'); }
-        
         function renderDetailLists() {
             if(editSIdx === -1) return;
             const series = appData.series[editSIdx];
@@ -906,25 +904,21 @@
             const subSelect = document.getElementById('selectSubModel');
             const colSelect = document.getElementById('selectColor');
             const campSelect = document.getElementById('selectCampaign');
-
             subSelect.innerHTML = '<option value="-1">-- เลือกรุ่นย่อย --</option>';
             colSelect.innerHTML = '<option value="-1">-- เลือกสี --</option>';
             campSelect.innerHTML = '<option value="-1">-- เลือกแคมเปญ --</option>';
             document.getElementById('carPrice').value = 0; document.getElementById('colorPrice').value = 0;
-            
             if(seriesIdx != -1) {
                 subSelect.disabled = false; colSelect.disabled = false; campSelect.disabled = false;
                 const series = appData.series[seriesIdx];
                 series.subModels.forEach((sub, idx) => { subSelect.innerHTML += `<option value="${idx}">${sub.name} (${fmt(sub.price)})</option>`; });
                 series.colors.forEach((col, idx) => { colSelect.innerHTML += `<option value="${idx}">${col.name} ${col.price>0?'+'+fmt(col.price):''}</option>`; });
-                
                 if(series.campaigns) {
-                    series.campaigns.forEach((camp, idx) => {
-                        campSelect.innerHTML += `<option value="${idx}">${camp.name}</option>`;
-                    });
+                    series.campaigns.forEach((camp, idx) => { campSelect.innerHTML += `<option value="${idx}">${camp.name}</option>`; });
                 }
             } else { subSelect.disabled = true; colSelect.disabled = true; campSelect.disabled = true; }
-            onCampaignSelect(); // Reset finance selector
+            onCampaignSelect();
+            saveSession(); // Save Change
         }
 
         function onSubModelChange() {
@@ -937,24 +931,18 @@
             document.getElementById('colorPrice').value = (sIdx!=-1 && cIdx!=-1) ? appData.series[sIdx].colors[cIdx].price : 0;
             calculate();
         }
-
         function onCampaignSelect() {
             const sIdx = document.getElementById('selectSeries').value;
             const campIdx = document.getElementById('selectCampaign').value;
             const finContainer = document.getElementById('financeSelectorContainer');
             const finSelect = document.getElementById('selectFinanceCo');
-
             finSelect.innerHTML = '';
             finContainer.classList.add('hidden');
-
             if(sIdx != -1 && campIdx != -1) {
                 const camp = appData.series[sIdx].campaigns[campIdx];
-                // Check if campaign has specific finances
                 if(camp.finances && camp.finances.length > 0) {
                     finContainer.classList.remove('hidden');
-                    camp.finances.forEach((f, idx) => {
-                         finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`;
-                    });
+                    camp.finances.forEach((f, idx) => { finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`; });
                 }
             }
             calculateInterestAuto();
@@ -964,12 +952,8 @@
         function getInterestRate(matrix, downPct, term) {
             let selectedTier = 0;
             const sortedTiers = tiers.slice().sort((a,b)=>a-b);
-            for(let t of sortedTiers) {
-                if(downPct >= t) selectedTier = t;
-            }
-            if(matrix[selectedTier] && matrix[selectedTier][term]) {
-                return matrix[selectedTier][term];
-            }
+            for(let t of sortedTiers) { if(downPct >= t) selectedTier = t; }
+            if(matrix[selectedTier] && matrix[selectedTier][term]) return matrix[selectedTier][term];
             return 0;
         }
 
@@ -979,29 +963,19 @@
             const downPct = parseFloat(document.getElementById('downPercent').value) || 0;
             const discount = parseFloat(document.getElementById('interestDiscount').value) || 0;
             
-            // Check Finance
             const finContainer = document.getElementById('financeSelectorContainer');
             let useFinance = !finContainer.classList.contains('hidden');
             let finIdx = document.getElementById('selectFinanceCo').value;
 
             if(sIdx != -1 && campIdx != -1) {
                 const camp = appData.series[sIdx].campaigns[campIdx];
-                let activeMatrix = camp.matrix; // Default to general
-
-                if(useFinance && finIdx != null && camp.finances[finIdx]) {
-                    activeMatrix = camp.finances[finIdx].matrix;
-                }
-
+                let activeMatrix = camp.matrix;
+                if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix;
                 if(activeMatrix) {
-                    const r48 = Math.max(0, getInterestRate(activeMatrix, downPct, 48) - discount);
-                    const r60 = Math.max(0, getInterestRate(activeMatrix, downPct, 60) - discount);
-                    const r72 = Math.max(0, getInterestRate(activeMatrix, downPct, 72) - discount);
-                    const r84 = Math.max(0, getInterestRate(activeMatrix, downPct, 84) - discount);
-                    
-                    document.getElementById('rate48').value = r48.toFixed(2);
-                    document.getElementById('rate60').value = r60.toFixed(2);
-                    document.getElementById('rate72').value = r72.toFixed(2);
-                    document.getElementById('rate84').value = r84.toFixed(2);
+                    [48, 60, 72, 84].forEach(t => {
+                        const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount);
+                        document.getElementById('rate'+t).value = r.toFixed(2);
+                    });
                 }
             }
             calculate(false);
@@ -1015,6 +989,7 @@
         function updateCustomerInfo() {
             document.getElementById('dispCustName').innerText = document.getElementById('custName').value || "ชื่อลูกค้า";
             document.getElementById('dispCustTel').innerText = "Tel: " + (document.getElementById('custTel').value || "...");
+            saveSession();
         }
         function setMode(mode) {
             currentMode = mode;
@@ -1030,6 +1005,7 @@
                 document.getElementById('lbl-discount-type').innerText = "(ส่วนลดราคารถ)";
             }
             calculate();
+            saveSession();
         }
         function updateDownAmount() {
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
@@ -1056,12 +1032,12 @@
             }
             document.getElementById('dispModelFull').innerText = text;
         }
+
         function calculate(recalcDown = true) {
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
             const totalCarPrice = price + color;
             const discount = parseFloat(document.getElementById('discount').value) || 0;
-            
             const reg = parseFloat(document.getElementById('regFee').value) || 0;
             const ins = parseFloat(document.getElementById('insurance').value) || 0;
             const red = parseFloat(document.getElementById('redPlate').value) || 0;
@@ -1075,20 +1051,17 @@
             document.getElementById('sumInsure').innerText = fmt(ins);
             document.getElementById('sumRedPlate').innerText = fmt(red);
             document.getElementById('sumAdvInst').innerText = fmt(adv);
-            document.getElementById('sumVat').innerText = fmt(vat);
+             document.getElementById('sumVat').innerText = fmt(vat);
             document.getElementById('sumAcc').innerText = fmt(acc);
             document.getElementById('sumBooking').innerText = "- " + fmt(book);
             document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
             const campIdx = document.getElementById('selectCampaign').value;
             const sIdx = document.getElementById('selectSeries').value;
-            let campName = "";
-            let finName = "";
-
+            let campName = "", finName = "";
             if(sIdx != -1 && campIdx != -1 && appData.series[sIdx].campaigns && appData.series[sIdx].campaigns[campIdx]) {
                  const camp = appData.series[sIdx].campaigns[campIdx];
                  campName = camp.name;
-                 // Get Finance Name if selected
                  const finContainer = document.getElementById('financeSelectorContainer');
                  if(!finContainer.classList.contains('hidden')) {
                      const fSelect = document.getElementById('selectFinanceCo');
@@ -1099,19 +1072,10 @@
                  }
             }
             document.getElementById('dispCampName').innerText = campName;
-
             const dispFin = document.getElementById('dispFinanceCo');
-            if(finName) {
-                dispFin.innerText = finName;
-                dispFin.classList.remove('hidden');
-            } else {
-                dispFin.classList.add('hidden');
-            }
+            if(finName) { dispFin.innerText = finName; dispFin.classList.remove('hidden'); } else { dispFin.classList.add('hidden'); }
 
-            // Theme is already set but ensure consistency
-            const themeColor = currentThemeColor; 
             const badge = document.getElementById('badge-mode');
-
             if (currentMode === 'finance') {
                 document.getElementById('preview-finance-table').classList.remove('hidden');
                 badge.innerText = "FINANCE";
@@ -1132,9 +1096,7 @@
                     document.getElementById('inst'+term).innerText = fmt(monthly);
                 });
                 document.getElementById('sumDown').innerText = fmt(downAmt);
-                const expenses = downAmt + reg + ins + red + adv + vat + acc;
-                const deductions = book + discount;
-                const grandTotal = expenses - deductions;
+                const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             } else {
                 document.getElementById('preview-finance-table').classList.add('hidden');
@@ -1142,19 +1104,20 @@
                 document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
                 document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
                 document.getElementById('sumDown').innerText = fmt(totalCarPrice);
-                const expenses = totalCarPrice + reg + ins + red + adv + vat + acc;
-                const deductions = book + discount;
-                const grandTotal = expenses - deductions;
+                const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             }
+            saveSession(); 
         }
+
         function renderGifts() {
             const raw = document.getElementById('giftList').value;
             const items = raw.split(',').map(s => s.trim()).filter(s => s);
             const list = document.getElementById('displayGiftList');
-            list.innerHTML = '';
-            items.forEach(i => { list.innerHTML += `<li>${i}</li>`; });
+            list.innerHTML = ''; items.forEach(i => { list.innerHTML += `<li>${i}</li>`; });
+            saveSession();
         }
+
         function switchTab(tabName) {
             ['settings','interest','editor','preview'].forEach(t => { 
                 document.getElementById('view-'+t).classList.add('hidden'); 
@@ -1171,6 +1134,7 @@
             }
             window.scrollTo(0,0);
         }
+
         function generateImage() {
             const modal=document.getElementById('imageModal'), content=document.getElementById('modalContent');
             modal.classList.remove('hidden'); content.innerHTML='<span class="text-gray-400 text-sm">กำลังสร้างรูปภาพ...</span>';
