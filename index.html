@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - Auto Save (V11.5 Full)</title>
+    <title>Honda Quotation - Clean Preview (V11.6)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } /* เพิ่มพื้นที่ด้านล่างป้องกันปุ่มบัง */
+        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } 
         .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-btn { color: #6b7280; font-size: 0.8rem; }
         .input-mobile { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; background: #fff; }
@@ -34,7 +34,6 @@
         .rate-input:focus { border-color: #2563eb; outline: none; background-color: #eff6ff; }
         .row-header { font-size: 0.8rem; font-weight: bold; color: #374151; text-align: center; background: #f9fafb; border-radius: 4px; padding: 4px 0; }
         
-        /* ปรับแต่งสำหรับมือถือที่มีแถบ Home ด้านล่าง */
         .bottom-nav-safe {
             padding-bottom: env(safe-area-inset-bottom);
             padding-bottom: constant(safe-area-inset-bottom);
@@ -65,7 +64,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.11.5) ระบบบันทึกข้อมูลลูกค้าให้อัตโนมัติแล้ว
+                <i class="fa-solid fa-circle-info"></i> (V.11.6 Clean) ตัดชื่อแคมเปญ/ไฟแนนซ์ออกจากใบเสนอราคาแล้ว
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -326,11 +325,7 @@
                         <div class="flex justify-between items-center mb-2">
                             <div class="flex flex-col">
                                 <h3 id="head-schedule" class="font-bold text-sm border-l-4 border-blue-500 pl-2">ตารางผ่อนชำระ</h3>
-                                <div class="flex items-center gap-2 ml-3">
-                                    <span class="text-[10px] text-gray-500" id="dispCampName"></span>
-                                    <span id="dispFinanceCo" class="hidden text-[9px] bg-gray-100 text-gray-600 px-1 rounded border"></span>
                                 </div>
-                            </div>
                             <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200">ดาวน์ <span id="dispDownPercentPreview">25</span>%</span>
                         </div>
                         <div class="overflow-hidden rounded-lg border border-gray-200">
@@ -1056,24 +1051,9 @@
             document.getElementById('sumBooking').innerText = "- " + fmt(book);
             document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
-            const campIdx = document.getElementById('selectCampaign').value;
-            const sIdx = document.getElementById('selectSeries').value;
-            let campName = "", finName = "";
-            if(sIdx != -1 && campIdx != -1 && appData.series[sIdx].campaigns && appData.series[sIdx].campaigns[campIdx]) {
-                 const camp = appData.series[sIdx].campaigns[campIdx];
-                 campName = camp.name;
-                 const finContainer = document.getElementById('financeSelectorContainer');
-                 if(!finContainer.classList.contains('hidden')) {
-                     const fSelect = document.getElementById('selectFinanceCo');
-                     if(fSelect.value != "") {
-                         const finObj = camp.finances[fSelect.value];
-                         if(finObj) finName = finObj.name;
-                     }
-                 }
-            }
-            document.getElementById('dispCampName').innerText = campName;
-            const dispFin = document.getElementById('dispFinanceCo');
-            if(finName) { dispFin.innerText = finName; dispFin.classList.remove('hidden'); } else { dispFin.classList.add('hidden'); }
+            // --- ส่วนที่ถูกตัดออก (Campaign/Finance Logic for Display) ---
+            // ไม่ต้องแสดงผล dispCampName และ dispFinanceCo แล้ว
+            // ----------------------------------------------------
 
             const badge = document.getElementById('badge-mode');
             if (currentMode === 'finance') {
