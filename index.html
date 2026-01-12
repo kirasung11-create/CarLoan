@@ -2,389 +2,1183 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โปรแกรมคำนวณค่างวดรถยนต์ - Sales Quotation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Honda Quotation - Custom Theme (V11)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
-        .input-group label { font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; display: block; }
-        .input-box { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; outline: none; transition: border-color 0.2s; }
-        .input-box:focus { border-color: #2563eb; ring: 2px; }
-        .table-row-custom:nth-child(even) { background-color: #f9fafb; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 90px; }
+        .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-btn { color: #6b7280; font-size: 0.8rem; }
+        .input-mobile { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; background: #fff; }
+        .input-mobile:focus { outline: none; border-color: #2563eb; ring: 2px; }
+        
+        .mode-btn { transition: all 0.3s; }
+        .mode-btn.active { background-color: white; color: #2563eb; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; }
+        .mode-btn.inactive { color: #6b7280; }
+
+        #imageModal { backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.8); }
+        .list-item { transition: all 0.2s; }
+        .list-item:active { transform: scale(0.98); }
+        
+        /* Color Picker Button Style */
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
+        .color-dot:active { transform: scale(0.9); }
+        .color-dot.selected { ring: 2px; ring-color: #cbd5e1; transform: scale(1.1); }
+
+        /* Table Input Style */
+        .rate-table th { font-size: 0.75rem; color: #6b7280; padding: 4px; font-weight: normal; }
+        .rate-table td { padding: 2px; }
+        .rate-input { width: 100%; text-align: center; border: 1px solid #e5e7eb; border-radius: 4px; padding: 6px; font-size: 0.9rem; }
+        .rate-input:focus { border-color: #2563eb; outline: none; background-color: #eff6ff; }
+        .row-header { font-size: 0.8rem; font-weight: bold; color: #374151; text-align: center; background: #f9fafb; border-radius: 4px; padding: 4px 0; }
     </style>
 </head>
-<body class="p-6">
+<body>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg h-fit no-print">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">⚙️ ตั้งค่าการคำนวณ</h2>
+    <div class="fixed top-0 left-0 w-full bg-white shadow-sm z-40 flex justify-around items-center h-14 px-1">
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn flex-1 text-center h-full flex flex-col items-center justify-center">
+            <i class="fa-solid fa-database mb-1"></i> ฐานข้อมูล
+        </button>
+        <button onclick="switchTab('interest')" id="tab-interest" class="tab-btn flex-1 text-center h-full flex flex-col items-center justify-center">
+            <i class="fa-solid fa-percent mb-1"></i> ดอกเบี้ย
+        </button>
+        <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn active flex-1 text-center h-full flex flex-col items-center justify-center">
+            <i class="fa-solid fa-pen-to-square mb-1"></i> ทำใบเสนอราคา
+        </button>
+        <button onclick="switchTab('preview')" id="tab-preview" class="tab-btn flex-1 text-center h-full flex flex-col items-center justify-center">
+            <i class="fa-solid fa-file-invoice mb-1"></i> ตัวอย่าง
+        </button>
+    </div>
+
+    <div class="h-16"></div>
+
+    <div class="max-w-md mx-auto px-4">
+
+        <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
+            <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
+                <i class="fa-solid fa-circle-info"></i> (V.12/1/26)จัดการรุ่นรถและสีที่นี่ ส่วนดอกเบี้ยไปที่แท็บ "ดอกเบี้ย"
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-car"></i> 1. รุ่นรถหลัก (Series)</h3>
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="newSeriesName" class="input-mobile" placeholder="ชื่อรุ่นหลัก (เช่น Honda City)">
+                    <button onclick="addSeries()" class="bg-blue-600 text-white px-4 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="seriesList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div id="seriesDetailPanel" class="hidden space-y-4">
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 flex justify-between items-center">
+                    <span class="font-bold text-indigo-900" id="editingSeriesName">กำลังแก้ไข: ...</span>
+                    <button onclick="closeSeriesDetail()" class="text-sm text-indigo-600 underline">ปิด</button>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-list-ol"></i> 2. รุ่นย่อย & ราคา</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="newSubName" class="input-mobile flex-[2]" placeholder="รุ่นย่อย">
+                        <input type="number" id="newSubPrice" class="input-mobile flex-1" placeholder="ราคา">
+                        <button onclick="addSubModel()" class="bg-indigo-600 text-white px-3 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="subModelList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-palette"></i> 3. สีเฉพาะรุ่นนี้</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="newColorName" class="input-mobile flex-[2]" placeholder="ชื่อสี">
+                        <input type="number" id="newColorPrice" class="input-mobile flex-1" placeholder="เพิ่ม">
+                        <button onclick="addColor()" class="bg-pink-600 text-white px-3 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="colorList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
             
-            <div class="space-y-4">
-                <div class="input-group">
-                    <label>เลือกรุ่นรถ</label>
-                    <select id="carModel" class="input-box bg-gray-50" onchange="updatePrice()">
-                        <option value="0">-- เลือกรุ่นรถ --</option>
-                        <option value="679000">City Turbo : SV (679,000)</option>
-                        <option value="749000">City Turbo : RS (749,000)</option>
-                        <option value="599000">City HB Turbo : S+ (599,000)</option>
-                        <option value="679000">City HB Turbo : SV (679,000)</option>
-                        <option value="749000">City HB Turbo : RS (749,000)</option>
+            <button onclick="resetToDefault()" class="w-full py-3 text-red-500 text-sm underline mt-8">ล้างข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น</button>
+        </div>
+
+        <div id="view-interest" class="space-y-4 hidden animate-fade-in pb-20">
+            <div class="bg-green-50 border border-green-200 p-3 rounded-lg text-sm text-green-800">
+                <i class="fa-solid fa-table"></i> ตั้งค่าดอกเบี้ย และเพิ่ม/ลบไฟแนนซ์ได้ในแต่ละแคมเปญ
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <label class="text-xs text-gray-500 font-bold block mb-2">1. เลือกรุ่นรถที่จะตั้งค่า</label>
+                <select id="selectSeriesInterest" class="input-mobile bg-gray-50 mb-4" onchange="renderCampaignsList()">
+                    <option value="-1">-- เลือกรุ่นรถ --</option>
+                </select>
+
+                <div id="interestConfigPanel" class="hidden">
+                     <label class="text-xs text-gray-500 font-bold block mb-2">2. รายการแคมเปญ</label>
+                     <div class="flex gap-2 mb-3">
+                        <input type="text" id="newCampaignName" class="input-mobile" placeholder="ชื่อแคมเปญ (เช่น ทางเลือกที่ 1)">
+                        <button onclick="addCampaign()" class="bg-green-600 text-white px-4 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    
+                    <div id="campaignList" class="space-y-3 mb-4"></div>
+
+                    <div id="financeManagerPanel" class="hidden bg-gray-50 p-3 rounded-lg border border-gray-200 mt-4 relative">
+                        <button onclick="closeFinanceManager()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+                        
+                        <h4 class="font-bold text-gray-800 mb-2" id="mgrCampName">จัดการดอกเบี้ย</h4>
+                        
+                        <div class="bg-white p-2 rounded border mb-3">
+                            <label class="text-xs text-gray-500 block mb-1">รายชื่อไฟแนนซ์ในแคมเปญนี้</label>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="newFinName" class="border rounded px-2 py-1 text-sm w-full" placeholder="เพิ่มไฟแนนซ์ (เช่น K-Leasing)">
+                                <button onclick="addFinanceToCamp()" class="bg-blue-600 text-white px-3 rounded text-sm"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div id="financeListItems" class="space-y-1"></div>
+                            <p class="text-[10px] text-gray-400 mt-1">*ถ้าไม่มีไฟแนนซ์ (Empty) จะใช้เรทมาตรฐานทั่วไป</p>
+                        </div>
+
+                        <div id="matrixContainer" class="hidden animate-fade-in">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-xs font-bold text-blue-700" id="matrixTitle">เรทของ: General</span>
+                            </div>
+                            <table class="w-full rate-table bg-white rounded border">
+                                <thead>
+                                    <tr>
+                                        <th class="w-1/6">ดาวน์</th>
+                                        <th class="w-1/5">48</th>
+                                        <th class="w-1/5">60</th>
+                                        <th class="w-1/5">72</th>
+                                        <th class="w-1/5">84</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rateMatrixBody"></tbody>
+                            </table>
+                            <button onclick="saveCurrentMatrix()" class="w-full mt-2 bg-blue-600 text-white py-1.5 rounded text-sm shadow">บันทึกตารางนี้</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-editor" class="space-y-4 animate-fade-in">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-user text-green-600"></i> ข้อมูลลูกค้า</h3>
+                <div class="grid grid-cols-1 gap-3">
+                    <input type="text" id="custName" class="input-mobile" placeholder="ชื่อ-นามสกุล ลูกค้า" oninput="updateCustomerInfo()">
+                    <input type="text" id="custTel" class="input-mobile" placeholder="เบอร์โทรศัพท์" oninput="updateCustomerInfo()">
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-brush text-purple-500"></i> ตกแต่งใบเสนอราคา</h3>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">เลือกสีธีม:</span>
+                    <div class="flex gap-2">
+                        <div onclick="setTheme('#2563eb')" class="color-dot bg-blue-600" title="Blue"></div>
+                        <div onclick="setTheme('#dc2626')" class="color-dot bg-red-600" title="Red"></div>
+                        <div onclick="setTheme('#059669')" class="color-dot bg-green-600" title="Green"></div>
+                        <div onclick="setTheme('#374151')" class="color-dot bg-gray-700" title="Dark"></div>
+                        <div class="relative w-8 h-8 rounded-full overflow-hidden shadow-sm border-2 border-white">
+                             <input type="color" id="customThemeColor" class="absolute -top-2 -left-2 w-12 h-12 p-0 border-0 cursor-pointer" value="#2563eb" oninput="setTheme(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-200 p-1 rounded-lg flex relative">
+                <button onclick="setMode('finance')" id="btn-mode-finance" class="mode-btn active flex-1 py-2 rounded-md text-sm">
+                    <i class="fa-solid fa-credit-card"></i> จัดไฟแนนซ์
+                </button>
+                <button onclick="setMode('cash')" id="btn-mode-cash" class="mode-btn inactive flex-1 py-2 rounded-md text-sm">
+                    <i class="fa-solid fa-money-bill-wave"></i> ซื้อเงินสด
+                </button>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-car text-blue-600"></i> เลือกรุ่นรถ & สี</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-500 ml-1 font-bold">1. รุ่นหลัก (Series)</label>
+                        <select id="selectSeries" class="input-mobile bg-gray-50" onchange="onSeriesChange()">
+                            <option value="-1">-- เลือกรุ่นหลัก --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 ml-1 font-bold">2. รุ่นย่อย (Grade)</label>
+                        <select id="selectSubModel" class="input-mobile bg-gray-50" onchange="onSubModelChange()" disabled>
+                            <option value="-1">-- เลือกรุ่นย่อย --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 ml-1 font-bold">3. สีรถ (Color)</label>
+                        <select id="selectColor" class="input-mobile bg-gray-50" onchange="onColorChange()" disabled>
+                            <option value="-1">-- เลือกสี --</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded border">
+                        <div><label class="text-xs text-gray-500 ml-1">ราคารถ</label><input type="number" id="carPrice" class="input-mobile font-bold text-gray-800 bg-gray-100" readonly value="0"></div>
+                        <div><label class="text-xs text-gray-500 ml-1">ค่าสีเพิ่ม</label><input type="number" id="colorPrice" class="input-mobile text-blue-600 font-semibold bg-gray-100" readonly value="0"></div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 ml-1">ส่วนลด <span id="lbl-discount-type">(ส่วนลดเงินดาวน์)</span></label>
+                        <input type="number" id="discount" class="input-mobile text-red-600" placeholder="0" oninput="calculate()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="finance-section" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition-all duration-300">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-coins text-yellow-500"></i> คำนวณเงินดาวน์</h3>
+                
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 ml-1 font-bold text-green-600"><i class="fa-solid fa-tag"></i> เลือกแคมเปญดอกเบี้ย</label>
+                    <select id="selectCampaign" class="input-mobile bg-green-50 text-green-800 font-medium" onchange="onCampaignSelect()" disabled>
+                        <option value="-1">-- กรุณาเลือกรุ่นรถก่อน --</option>
                     </select>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="input-group">
-                        <label>ราคารถ (บาท)</label>
-                        <input type="number" id="carPrice" class="input-box" value="0" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>ค่าสีเพิ่ม (บาท)</label>
-                        <input type="number" id="colorPrice" class="input-box" value="0" oninput="calculate()">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="input-group">
-                        <label>เงินดาวน์ (%)</label>
-                        <input type="number" id="downPercent" class="input-box" value="25" oninput="updateDownAmount()">
-                    </div>
-                    <div class="input-group">
-                        <label>เงินดาวน์ (บาท)</label>
-                        <input type="number" id="downAmount" class="input-box" value="0" oninput="updateDownPercent()">
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label>ส่วนลดราคารถ (ซับดาวน์)</label>
-                    <input type="number" id="discount" class="input-box text-red-600" value="0" oninput="calculate()">
-                </div>
-
-                <hr>
-
-                <h3 class="font-semibold text-sm text-gray-600">ดอกเบี้ย (%)</h3>
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="input-group">
-                        <label>48 งวด</label>
-                        <input type="number" id="rate48" class="input-box" value="2.09" step="0.01" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>60 งวด</label>
-                        <input type="number" id="rate60" class="input-box" value="2.34" step="0.01" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>72 งวด</label>
-                        <input type="number" id="rate72" class="input-box" value="2.74" step="0.01" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>84 งวด</label>
-                        <input type="number" id="rate84" class="input-box" value="3.30" step="0.01" oninput="calculate()">
-                    </div>
-                </div>
-
-                <hr>
-
-                <h3 class="font-semibold text-sm text-gray-600">ค่าใช้จ่ายวันรับรถ</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="input-group">
-                        <label>ค่าจดทะเบียน</label>
-                        <input type="number" id="regFee" class="input-box" value="3500" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>มัดจำป้ายแดง</label>
-                        <input type="number" id="redPlate" class="input-box" value="3000" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>หักมัดจำจอง</label>
-                        <input type="number" id="bookingDeduct" class="input-box" value="5000" oninput="calculate()">
-                    </div>
-                    <div class="input-group">
-                        <label>ประกันภัย</label>
-                        <input type="number" id="insurance" class="input-box" value="0" oninput="calculate()">
+                <div id="financeSelectorContainer" class="hidden mb-3 p-3 bg-green-50 border border-green-200 rounded-lg animate-fade-in">
+                    <div class="mb-2">
+                        <label class="text-xs text-green-700 font-bold block mb-1">เลือกไฟแนนซ์ (สำหรับแคมเปญนี้)</label>
+                        <select id="selectFinanceCo" class="input-mobile h-10 py-1 text-sm bg-white" onchange="calculateInterestAuto()">
+                            </select>
                     </div>
                 </div>
                 
-                <div class="input-group mt-2">
-                    <label>รายการของแถม (คั่นด้วย comma ,)</label>
-                    <textarea id="giftList" class="input-box h-24" oninput="renderGifts()">ประกันภัยชั้น 1, ฟิล์มเซรามิก, พรมปูพื้น, กรอบป้ายทะเบียน, น้ำมันเต็มถัง, Ultimate Care</textarea>
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 ml-1">ส่วนลดดอกเบี้ย (ลบออกจากเรทปกติ)</label>
+                    <input type="number" id="interestDiscount" class="input-mobile text-blue-600" placeholder="0.00" step="0.05" oninput="calculateInterestAuto()">
                 </div>
 
-                <button onclick="saveImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg mt-4 shadow transition">
-                    📸 บันทึกรูปภาพส่งลูกค้า
-                </button>
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs text-gray-500">เงินดาวน์ (%)</label>
+                        <input type="number" id="downPercent" class="bg-white border rounded px-2 py-1 w-16 text-center text-sm font-bold text-blue-600" value="25" oninput="updateDownAmount()">
+                    </div>
+                    <div class="relative">
+                        <input type="number" id="downAmount" class="input-mobile text-right pr-10 font-bold text-blue-700" value="0" oninput="updateDownPercent()">
+                        <span class="absolute right-3 top-3 text-gray-400 text-sm">บาท</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-1">
+                    <label class="text-xs text-gray-500 block ml-1">ดอกเบี้ย (%)</label>
+                    <span class="text-[10px] text-green-600 bg-green-100 px-2 rounded-full" id="interest-badge">Auto</span>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="text-center"><span class="text-[10px] text-gray-400">48งวด</span><input type="number" id="rate48" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
+                    <div class="text-center"><span class="text-[10px] text-gray-400">60งวด</span><input type="number" id="rate60" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
+                    <div class="text-center"><span class="text-[10px] text-gray-400">72งวด</span><input type="number" id="rate72" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
+                    <div class="text-center"><span class="text-[10px] text-gray-400">84งวด</span><input type="number" id="rate84" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-receipt text-orange-500"></i> ค่าใช้จ่าย & ของแถม</h3>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div><label class="text-xs text-gray-500 ml-1">ค่าจดทะเบียน</label><input type="number" id="regFee" class="input-mobile" value="0" oninput="calculate()"></div>
+                    <div><label class="text-xs text-gray-500 ml-1">ค่าเบี้ยประกัน</label><input type="number" id="insurance" class="input-mobile" value="0" oninput="calculate()"></div>
+                    <div><label class="text-xs text-gray-500 ml-1">มัดจำป้ายแดง</label><input type="number" id="redPlate" class="input-mobile" value="0" oninput="calculate()"></div>
+                    <div><label class="text-xs text-gray-500 ml-1">งวดแรก (ถ้าจ่าย)</label><input type="number" id="advInstallment" class="input-mobile text-blue-600" placeholder="0" oninput="calculate()"></div>
+                     <div><label class="text-xs text-gray-500 ml-1">ค่า VAT 7%</label><input type="number" id="vatFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
+                    <div><label class="text-xs text-gray-500 ml-1">อุปกรณ์เพิ่มเติม</label><input type="number" id="accFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
+                </div>
+                <hr class="my-3 border-gray-100">
+                <div><label class="text-xs text-gray-500 ml-1">หัก เงินมัดจำจอง</label><input type="number" id="bookingDeduct" class="input-mobile text-red-600" value="0" oninput="calculate()"></div>
+                <div class="mt-3"><label class="text-xs text-gray-500 ml-1">รายการของแถม</label><textarea id="giftList" class="input-mobile h-24 text-sm" placeholder="พิมพ์รายการของแถม..." oninput="renderGifts()">ประกันภัยชั้น 1, พรบ., ฟิล์มเซรามิก, กรอบป้าย,</textarea></div>
             </div>
         </div>
 
-        <div class="lg:col-span-2">
-            <div id="quotation-card" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-800">ใบเสนอราคารถยนต์</h1>
-                        <p class="text-gray-500 text-sm mt-1">วันที่: <span id="currentDate"></span></p>
-                    </div>
-                    <div class="text-right">
-                        <h2 class="text-xl font-bold text-blue-600">HONDA DEALER</h2>
-                        <p class="text-sm text-gray-500">ที่ปรึกษาการขาย: <span contenteditable="true" class="border-b border-gray-300 focus:outline-none focus:border-blue-500">ใส่ชื่อของคุณ</span></p>
-                        <p class="text-sm text-gray-500">Tel/Line: <span contenteditable="true" class="border-b border-gray-300 focus:outline-none focus:border-blue-500">08x-xxx-xxxx</span></p>
-                    </div>
-                </div>
-
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-500">รุ่นรถยนต์</p>
-                            <p class="font-bold text-lg text-gray-800" id="dispModel">City Turbo</p>
+        <div id="view-preview" class="hidden pb-20">
+            <div id="quotation-card" class="bg-white rounded-none md:rounded-xl shadow-lg relative overflow-hidden text-gray-800 w-full" style="min-height: 600px;">
+                <div id="card-top-strip" class="h-3 bg-gradient-to-r from-blue-600 to-indigo-800"></div>
+                
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-1/2">
+                            <h2 class="text-2xl font-bold text-gray-800">ใบเสนอราคา</h2>
+                            <p class="text-xs text-gray-500 mt-1">วันที่: <span id="currentDate"></span></p>
+                            <span id="badge-mode" class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">FINANCE</span>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm text-gray-500">ราคารถรวมสี (สุทธิ)</p>
-                            <p class="font-bold text-2xl text-blue-700" id="dispNetPrice">0 บาท</p>
+                        <div class="w-1/2 text-right">
+                            <h3 id="head-cust-info" class="font-bold text-blue-700 text-sm">ข้อมูลลูกค้า (Customer)</h3>
+                            <p class="text-lg font-bold text-gray-800 mt-1" id="dispCustName">ชื่อลูกค้า</p>
+                            <p class="text-sm text-gray-600" id="dispCustTel">Tel: ...</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 class="font-bold text-gray-700 mb-3 border-l-4 border-blue-500 pl-2">รายละเอียดค่างวด</h3>
-                        
-                        <div class="flex justify-between mb-2 text-sm">
-                            <span>ยอดจัดไฟแนนซ์:</span>
-                            <span class="font-bold" id="dispFinance">0</span>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                        <p class="text-xs text-gray-500 mb-1">รุ่นรถยนต์</p>
+                        <h1 class="text-xl font-bold text-gray-900 leading-tight" id="dispModelFull">เลือกรุ่นรถ</h1>
+                        <div class="mt-2 flex justify-between items-end border-t pt-2 border-gray-200">
+                            <span class="text-xs text-gray-500">ราคารถรวมสี</span>
+                            <span class="text-xl font-bold text-gray-800" id="dispNetPrice">0</span>
                         </div>
-                        <div class="flex justify-between mb-4 text-sm">
-                            <span>เงินดาวน์ (<span id="dispDownPercent">0</span>%):</span>
-                            <span class="font-bold text-green-600" id="dispDownAmount">0</span>
-                        </div>
-
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="bg-gray-100 text-gray-600">
-                                    <th class="py-2 px-2 text-left">จำนวนงวด</th>
-                                    <th class="py-2 px-2 text-center">ดบ.</th>
-                                    <th class="py-2 px-2 text-right">ค่างวด/เดือน</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y">
-                                <tr class="table-row-custom">
-                                    <td class="py-2 px-2">48 งวด (4 ปี)</td>
-                                    <td class="py-2 px-2 text-center" id="dispRate48">-</td>
-                                    <td class="py-2 px-2 text-right font-bold text-gray-800" id="inst48">0</td>
-                                </tr>
-                                <tr class="table-row-custom">
-                                    <td class="py-2 px-2">60 งวด (5 ปี)</td>
-                                    <td class="py-2 px-2 text-center" id="dispRate60">-</td>
-                                    <td class="py-2 px-2 text-right font-bold text-gray-800" id="inst60">0</td>
-                                </tr>
-                                <tr class="table-row-custom">
-                                    <td class="py-2 px-2">72 งวด (6 ปี)</td>
-                                    <td class="py-2 px-2 text-center" id="dispRate72">-</td>
-                                    <td class="py-2 px-2 text-right font-bold text-gray-800" id="inst72">0</td>
-                                </tr>
-                                <tr class="table-row-custom">
-                                    <td class="py-2 px-2">84 งวด (7 ปี)</td>
-                                    <td class="py-2 px-2 text-center" id="dispRate84">-</td>
-                                    <td class="py-2 px-2 text-right font-bold text-gray-800" id="inst84">0</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
 
-                    <div>
-                        <h3 class="font-bold text-gray-700 mb-3 border-l-4 border-orange-500 pl-2">ค่าใช้จ่ายวันรับรถ</h3>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">เงินดาวน์</span>
-                                <span id="sumDown">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">มัดจำป้ายแดง (ได้รับคืน)</span>
-                                <span id="sumRedPlate">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">ค่าจดทะเบียน</span>
-                                <span id="sumReg">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">ค่าเบี้ยประกันภัย</span>
-                                <span id="sumInsure">0</span>
-                            </div>
-                            <div class="flex justify-between text-red-500">
-                                <span>หัก เงินมัดจำจอง</span>
-                                <span id="sumBooking">- 0</span>
-                            </div>
-                            <div class="border-t pt-2 mt-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-bold text-gray-800">รวมจ่ายวันรับรถ</span>
-                                    <span class="font-bold text-2xl text-orange-600" id="grandTotal">0</span>
+                    <div id="preview-finance-table" class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex flex-col">
+                                <h3 id="head-schedule" class="font-bold text-sm border-l-4 border-blue-500 pl-2">ตารางผ่อนชำระ</h3>
+                                <div class="flex items-center gap-2 ml-3">
+                                    <span class="text-[10px] text-gray-500" id="dispCampName"></span>
+                                    <span id="dispFinanceCo" class="hidden text-[9px] bg-gray-100 text-gray-600 px-1 rounded border"></span>
                                 </div>
-                                <p class="text-xs text-gray-400 text-right mt-1">*ยังไม่รวมค่างวดล่วงหน้า (ถ้ามี)</p>
                             </div>
+                            <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200">ดาวน์ <span id="dispDownPercentPreview">25</span>%</span>
                         </div>
-
-                        <div class="mt-6">
-                            <h3 class="font-bold text-gray-700 mb-2 border-l-4 border-green-500 pl-2">รายการของแถม</h3>
-                            <ul id="displayGiftList" class="text-xs text-gray-600 list-disc pl-4 grid grid-cols-2 gap-x-2 gap-y-1">
-                                </ul>
+                        <div class="overflow-hidden rounded-lg border border-gray-200">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-100 text-gray-600 text-xs">
+                                    <tr>
+                                        <th class="py-2 px-3 text-left">งวด</th>
+                                        <th class="py-2 px-3 text-center">ดบ.</th>
+                                        <th class="py-2 px-3 text-right">ผ่อน/เดือน</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="py-2 px-3 text-gray-600">48 งวด</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate48">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst48">0</td></tr>
+                                    <tr><td class="py-2 px-3 text-gray-600">60 งวด</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate60">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst60">0</td></tr>
+                                    <tr><td class="py-2 px-3 text-gray-600">72 งวด</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate72">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst72">0</td></tr>
+                                    <tr><td class="py-2 px-3 text-gray-600">84 งวด</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate84">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst84">0</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
 
-                <div class="mt-8 pt-4 border-t text-center text-xs text-gray-400">
-                    <p>เอกสารนี้เป็นเพียงการเสนอราคาเบื้องต้น บริษัทขอสงวนสิทธิ์ในการเปลี่ยนแปลงเงื่อนไขโดยไม่ต้องแจ้งให้ทราบล่วงหน้า</p>
+                    <div class="mb-6">
+                        <h3 class="font-bold text-sm border-l-4 border-orange-500 pl-2 mb-2">ค่าใช้จ่ายวันรับรถ (สรุปยอด)</h3>
+                        <div class="bg-orange-50 rounded-lg p-3 space-y-1 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-700 font-semibold" id="lbl-pickup-main">เงินดาวน์</span> <span id="sumDown" class="font-semibold">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าจดทะเบียน</span> <span id="sumReg">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าเบี้ยประกัน</span> <span id="sumInsure">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">งวดแรกพร้อมวันรับรถ</span> <span id="sumAdvInst">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่ามัดจำป้ายแดง</span> <span id="sumRedPlate">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่า VAT 7%</span> <span id="sumVat">0</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าอุปกรณ์เพิ่มเติม</span> <span id="sumAcc">0</span></div>
+                            <div class="border-t border-orange-200 my-1"></div>
+                            <div class="flex justify-between text-red-600"><span class="text-xs">หัก เงินมัดจำ</span> <span id="sumBooking">-0</span></div>
+                            <div class="flex justify-between text-red-600"><span class="text-xs" id="lbl-discount-summ">หัก ส่วนลดเงินดาวน์</span> <span id="sumDiscount">-0</span></div>
+                            <div class="bg-white rounded p-2 mt-2 flex justify-between items-center border border-orange-100 shadow-sm"><span class="font-bold text-gray-800">รวมสุทธิวันรับรถ</span><span class="font-bold text-xl text-orange-600" id="grandTotal">0</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm border-l-4 border-green-500 pl-2 mb-2">รายการของแถม</h3>
+                        <ul id="displayGiftList" class="text-xs text-gray-600 list-disc pl-5 grid grid-cols-2 gap-1"></ul>
+                    </div>
                 </div>
             </div>
+            </div>
+    </div>
+
+    <div id="imageModal" class="fixed inset-0 z-[60] hidden flex flex-col justify-center items-center p-4">
+        <div class="bg-white rounded-xl p-4 w-full max-w-sm relative">
+            <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <h3 class="text-center font-bold text-gray-800 mb-2">รูปภาพพร้อมแล้ว!</h3>
+            <div id="modalContent" class="border rounded-lg overflow-hidden shadow-inner bg-gray-100 min-h-[200px] flex items-center justify-center"><span class="text-gray-400 text-sm">กำลังสร้างรูปภาพ...</span></div>
+            <button onclick="closeModal()" class="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg">ปิดหน้าต่าง</button>
         </div>
     </div>
 
-    <script>
-        // Set Current Date
-        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('th-TH', dateOptions);
+    <div class="fixed bottom-0 left-0 w-full bg-white border-t p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-50 flex gap-2">
+        <button onclick="switchTab('editor')" id="btn-back-edit" class="hidden flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-bold">กลับ</button>
+        <button onclick="switchTab('preview')" id="btn-go-preview" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-200">ดูใบเสนอราคา</button>
+        <button onclick="generateImage()" id="btn-save-img" class="hidden flex-1 bg-green-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200"><i class="fa-solid fa-download"></i> บันทึกภาพ</button>
+    </div>
 
-        // Format Number helper
-        const fmt = (num) => {
-            return parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    <script>
+        // --- 1. DATA STRUCTURE (V11 - REAL DATA from CSV) ---
+        const tiers = [0, 10, 15, 20, 25];
+        const terms = [48, 60, 72, 84];
+
+        // ------------------ RATE DEFINITIONS ------------------
+        
+        // 1. CITY (Also City HB)
+        const city_TL1 = {
+            0: {48:1.79, 60:2.59, 72:3.19, 84:3.69},
+            10: {48:1.39, 60:2.19, 72:2.99, 84:3.49},
+            15: {48:1.09, 60:1.59, 72:2.19, 84:2.99},
+            20: {48:0.39, 60:0.99, 72:1.69, 84:2.39},
+            25: {48:0.00, 60:0.59, 72:1.29, 84:1.99}
+        };
+        const city_TL2 = city_TL1; // Based on CSV, seemingly identical in snippet, will map same
+        const city_TL3 = {
+            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
+            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
+            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
+            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
+            25: {48:0.99, 60:1.99, 72:2.45, 84:2.99}
+        };
+        const city_Sub_AY = {
+            0: {48:3.90, 60:4.20, 72:4.50, 84:5.10},
+            10: {48:3.50, 60:3.90, 72:4.20, 84:4.60},
+            15: {48:3.00, 60:3.20, 72:3.60, 84:4.10},
+            20: {48:2.40, 60:2.60, 72:3.00, 84:3.60},
+            25: {48:2.19, 60:2.44, 72:2.84, 84:3.40}
+        };
+        const city_Sub_HLTC = {
+            0: {48:3.55, 60:3.95, 72:4.25, 84:4.65},
+            10: {48:3.55, 60:3.95, 72:4.25, 84:4.65},
+            15: {48:3.05, 60:3.25, 72:3.65, 84:4.15},
+            20: {48:2.45, 60:2.65, 72:3.05, 84:3.65},
+            25: {48:2.25, 60:2.49, 72:2.89, 84:3.45}
+        };
+
+        // 2. HR-V / CIVIC
+        const hrv_TL1 = {
+            0: {48:2.19, 60:2.79, 72:3.39, 84:3.89},
+            10: {48:1.69, 60:2.39, 72:3.19, 84:3.69},
+            15: {48:1.29, 60:1.79, 72:2.39, 84:3.19},
+            20: {48:0.59, 60:1.19, 72:1.89, 84:2.59},
+            25: {48:0.00, 60:0.79, 72:1.49, 84:2.19}
+        };
+        const hrv_TL2 = {
+            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
+            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
+            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
+            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
+            25: {48:0.99, 60:1.99, 72:2.45, 84:2.99}
+        };
+        const hrv_Sub_AY = {
+            0: {48:3.99, 60:4.29, 72:4.59, 84:5.25},
+            10: {48:3.29, 60:3.69, 72:3.79, 84:4.69},
+            15: {48:2.69, 60:2.79, 72:3.19, 84:3.59},
+            20: {48:2.29, 60:2.39, 72:2.69, 84:3.09},
+            25: {48:1.99, 60:2.29, 72:2.59, 84:2.79}
+        };
+        const hrv_Sub_HLTC = {
+            0: {48:3.19, 60:3.59, 72:3.69, 84:4.59},
+            10: {48:3.19, 60:3.59, 72:3.69, 84:4.59},
+            15: {48:2.59, 60:2.69, 72:3.09, 84:3.49},
+            20: {48:2.19, 60:2.29, 72:2.59, 84:2.99},
+            25: {48:1.89, 60:2.19, 72:2.49, 84:2.69}
+        };
+
+        // 3. CR-V / ACCORD
+        const crv_TL1 = {
+            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
+            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
+            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
+            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
+            25: {48:1.00, 60:1.99, 72:2.45, 84:2.99} 
+        };
+        const accord_TL1_Diff25 = { ...crv_TL1, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} }; // Accord 25% is 0.99 vs CRV 1.00
+
+        const crv_TL2 = {
+            0: {48:3.99, 60:4.29, 72:4.59, 84:5.25},
+            10: {48:3.29, 60:3.69, 72:3.79, 84:4.69},
+            15: {48:2.69, 60:2.79, 72:3.19, 84:3.59},
+            20: {48:2.29, 60:2.39, 72:2.69, 84:3.09},
+            25: {48:1.99, 60:2.29, 72:2.59, 84:2.79}
+        };
+        const crv_Sub_AY = hrv_Sub_AY; // Same rates
+        const crv_Sub_HLTC = hrv_Sub_HLTC; // Same rates
+
+        function createEmptyMatrix() {
+             let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 }; }); return m;
         }
 
-        // 1. Update Base Price from Select
-        function updatePrice() {
-            const select = document.getElementById('carModel');
-            const price = select.value;
-            const text = select.options[select.selectedIndex].text;
+        // ------------------ CAMPAIGN BUILDERS ------------------
+        
+        // City Builder
+        const cityCampaigns = [
+            { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] },
+            { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] },
+            { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] },
+            { 
+                name: "ทางเลือกเงินช่วย (Subsidy)", 
+                matrix: createEmptyMatrix(), 
+                finances: [ 
+                    { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC },
+                    { name: "AY (Krungsri)", matrix: city_Sub_AY }
+                ]
+            }
+        ];
+
+        // HRV/Civic Builder
+        const hrvCampaigns = [
+            { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: [] },
+            { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: [] },
+            { 
+                name: "ทางเลือกเงินช่วย (Subsidy)", 
+                matrix: createEmptyMatrix(), 
+                finances: [ 
+                    { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC },
+                    { name: "AY (Krungsri)", matrix: hrv_Sub_AY }
+                ]
+            }
+        ];
+
+        // CRV Builder
+        const crvCampaigns = [
+            { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: [] },
+            { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
+            { 
+                name: "ทางเลือกเงินช่วย (Subsidy)", 
+                matrix: createEmptyMatrix(), 
+                finances: [ 
+                    { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
+                    { name: "AY (Krungsri)", matrix: crv_Sub_AY }
+                ]
+            }
+        ];
+
+         // Accord Builder
+         const accordCampaigns = [
+            { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: [] },
+            { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
+            { 
+                name: "ทางเลือกเงินช่วย (Subsidy)", 
+                matrix: createEmptyMatrix(), 
+                finances: [ 
+                    { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
+                    { name: "AY (Krungsri)", matrix: crv_Sub_AY }
+                ]
+            }
+        ];
+
+        // FULL HONDA DATA (V11)
+        let DEFAULT_DATA = {
+            series: [
+                {
+                    id: 1, name: "Honda City",
+                    subModels: [ { name: "V", price: 629000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ],
+                    colors: [ 
+                        { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
+                        { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
+                        { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(cityCampaigns))
+                },
+                {
+                    id: 2, name: "Honda City Hatchback",
+                    subModels: [ { name: "S+", price: 599000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ],
+                    colors: [ 
+                         { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
+                         { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
+                         { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(cityCampaigns))
+                },
+                {
+                    id: 3, name: "Honda HR-V e:HEV",
+                    subModels: [ { name: "E", price: 949000 }, { name: "EL", price: 1079000 }, { name: "RS", price: 1179000 } ],
+                    colors: [ 
+                        { name: "สีดำคริสตัล", price: 8000 }, { name: "สีแดงอิกไนซ์ หลังคาสีดำทูโทน", price: 10000 }, { name: "สีขาวแพลทินัม", price: 12000 },
+                        { name: "สีขาวซันไลท์", price: 12000 }, { name: "สีกากีแซนด์ หลังคาสีดำทูโทน", price: 14000 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(hrvCampaigns))
+                },
+                {
+                    id: 4, name: "Honda Civic e:HEV",
+                    subModels: [ { name: "EL+", price: 1099000 }, { name: "RS", price: 1239000 } ],
+                    colors: [ 
+                        { name: "สีดำคริสตัล", price: 8000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีแดงอิกไนต์", price: 0 },
+                        { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(hrvCampaigns))
+                },
+                {
+                    id: 5, name: "Honda CR-V e:HEV",
+                    subModels: [ { name: "E (5 Seats)", price: 1399000 }, { name: "ES (5 Seats)", price: 1549000 }, { name: "HuNT (5 Seats)", price: 1599000 }, { name: "RS (5 Seats)", price: 1659000 }, { name: "RS 4WD (5 Seats)", price: 1729000 } ],
+                    colors: [ 
+                        { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเทาเออร์เบิน", price: 10000 },
+                        { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(crvCampaigns))
+                },
+                {
+                    id: 6, name: "Honda Accord e:HEV",
+                    subModels: [ { name: "E", price: 1479000 }, { name: "EL", price: 1599000 }, { name: "RS", price: 1729000 } ],
+                    colors: [ 
+                        { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }
+                    ],
+                    campaigns: JSON.parse(JSON.stringify(accordCampaigns))
+                }
+            ]
+        };
+
+        let appData = { series: [] };
+        // State variables for editing
+        let editSIdx = -1, editCampIdx = -1, editFinIdx = -1; // FinIdx -1 = Main Matrix
+        let currentThemeColor = '#2563eb'; // Default Blue
+
+        function initData() {
+            const savedData = localStorage.getItem('carQuotationData_v11'); 
+            if (savedData) {
+                appData = JSON.parse(savedData);
+                if(!appData.series) appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+            } else {
+                appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveData();
+            }
+            renderSeriesList();
+            populateSeriesDropdown();
+        }
+
+        function saveData() {
+            localStorage.setItem('carQuotationData_v11', JSON.stringify(appData));
+            renderSeriesList();
+            populateSeriesDropdown();
+            if(editSIdx !== -1) renderDetailLists();
+        }
+
+        function resetToDefault() {
+            if(confirm('รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น? ข้อมูลที่เพิ่มเองจะหายไป')) {
+                localStorage.removeItem('carQuotationData_v11');
+                initData();
+                alert("รีเซ็ตเรียบร้อย");
+            }
+        }
+
+        // --- THEME LOGIC ---
+        function setTheme(color) {
+            currentThemeColor = color;
+            document.getElementById('customThemeColor').value = color;
             
-            document.getElementById('carPrice').value = price;
-            // Update Display Model Name
-            document.getElementById('dispModel').innerText = text.split('(')[0];
+            // Update Preview Elements
+            // 1. Top Strip (Gradient based on color)
+            document.getElementById('card-top-strip').style.background = `linear-gradient(to right, ${color}, #1e293b)`;
+            
+            // 2. Headings
+            document.getElementById('head-cust-info').style.color = color;
+            
+            // 3. Badge
+            const badge = document.getElementById('badge-mode');
+            badge.style.color = color;
+            badge.style.borderColor = color + '40'; // add transparency
+            badge.style.backgroundColor = color + '15'; // very light bg
+            
+            // 4. Table Border
+            document.getElementById('head-schedule').style.borderLeftColor = color;
+        }
+
+        // --- INTEREST TAB LOGIC ---
+        function renderCampaignsList() {
+            const sIdx = document.getElementById('selectSeriesInterest').value;
+            const list = document.getElementById('campaignList');
+            const panel = document.getElementById('interestConfigPanel');
+            const mgrPanel = document.getElementById('financeManagerPanel');
+            
+            list.innerHTML = '';
+            mgrPanel.classList.add('hidden');
+
+            if(sIdx == -1) { panel.classList.add('hidden'); return; }
+            panel.classList.remove('hidden');
+
+            const series = appData.series[sIdx];
+            if(!series.campaigns) series.campaigns = [];
+
+            series.campaigns.forEach((camp, idx) => {
+                const finCount = camp.finances ? camp.finances.length : 0;
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3 bg-white border border-gray-200 rounded shadow-sm";
+                
+                div.innerHTML = `
+                    <div class="flex-1 cursor-pointer" onclick="openFinanceManager(${sIdx}, ${idx})">
+                        <div class="font-bold text-gray-800">${camp.name}</div>
+                        <div class="text-xs text-blue-600"><i class="fa-solid fa-list"></i> ${finCount > 0 ? finCount + " ไฟแนนซ์" : "ใช้เรทมาตรฐาน (General)"}</div>
+                    </div>
+                    <div class="flex gap-2">
+                         <button onclick="openFinanceManager(${sIdx}, ${idx})" class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold">จัดการไฟแนนซ์</button>
+                         <button onclick="deleteCampaign(${sIdx}, ${idx})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addCampaign() {
+            const sIdx = document.getElementById('selectSeriesInterest').value;
+            const name = document.getElementById('newCampaignName').value.trim();
+            if(sIdx != -1 && name) {
+                appData.series[sIdx].campaigns.push({ name: name, matrix: createDefaultMatrix(), finances: [] });
+                document.getElementById('newCampaignName').value = '';
+                saveData();
+                renderCampaignsList();
+            }
+        }
+
+        function deleteCampaign(sIdx, cIdx) {
+            if(confirm('ลบแคมเปญนี้?')) {
+                appData.series[sIdx].campaigns.splice(cIdx, 1);
+                saveData();
+                renderCampaignsList();
+            }
+        }
+
+        // --- FINANCE & MATRIX MANAGER ---
+        function openFinanceManager(sIdx, cIdx) {
+            editSIdx = sIdx; editCampIdx = cIdx; editFinIdx = -1; // Reset to main
+            const camp = appData.series[sIdx].campaigns[cIdx];
+            if(!camp.finances) camp.finances = [];
+
+            document.getElementById('financeManagerPanel').classList.remove('hidden');
+            document.getElementById('mgrCampName').innerText = "จัดการ: " + camp.name;
+            document.getElementById('matrixContainer').classList.add('hidden'); // Hide matrix until selected
+            
+            renderFinanceListItems();
+        }
+
+        function closeFinanceManager() {
+            document.getElementById('financeManagerPanel').classList.add('hidden');
+            editCampIdx = -1;
+        }
+
+        function renderFinanceListItems() {
+            const camp = appData.series[editSIdx].campaigns[editCampIdx];
+            const list = document.getElementById('financeListItems');
+            list.innerHTML = '';
+
+            // 1. General Matrix Option
+            const genDiv = document.createElement('div');
+            genDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === -1 ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
+            genDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">มาตรฐาน (General Rate)</span> <span class="text-xs text-gray-400">แก้ไขเรท</span>`;
+            genDiv.onclick = () => loadMatrix(-1);
+            list.appendChild(genDiv);
+
+            // 2. Finance Options
+            camp.finances.forEach((fin, fIdx) => {
+                const fDiv = document.createElement('div');
+                fDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === fIdx ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
+                fDiv.innerHTML = `
+                    <span class="text-sm text-gray-700">${fin.name}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-blue-500 underline" onclick="event.stopPropagation(); loadMatrix(${fIdx})">แก้ไขเรท</span>
+                        <button class="text-red-400 hover:text-red-600" onclick="event.stopPropagation(); deleteFinance(${fIdx})"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                `;
+                fDiv.onclick = () => loadMatrix(fIdx);
+                list.appendChild(fDiv);
+            });
+        }
+
+        function addFinanceToCamp() {
+            const name = document.getElementById('newFinName').value.trim();
+            if(name && editSIdx!=-1) {
+                appData.series[editSIdx].campaigns[editCampIdx].finances.push({
+                    name: name,
+                    matrix: createDefaultMatrix()
+                });
+                document.getElementById('newFinName').value = '';
+                saveData();
+                renderFinanceListItems();
+            }
+        }
+
+        function deleteFinance(fIdx) {
+            if(confirm('ลบไฟแนนซ์นี้?')) {
+                appData.series[editSIdx].campaigns[editCampIdx].finances.splice(fIdx, 1);
+                if(editFinIdx === fIdx) { editFinIdx = -1; document.getElementById('matrixContainer').classList.add('hidden'); }
+                saveData();
+                renderFinanceListItems();
+            }
+        }
+
+        function loadMatrix(fIdx) {
+            editFinIdx = fIdx;
+            renderFinanceListItems(); // Update active highlight
+            
+            const camp = appData.series[editSIdx].campaigns[editCampIdx];
+            let targetMatrix, targetName;
+
+            if (fIdx === -1) {
+                targetMatrix = camp.matrix;
+                targetName = "General Rate";
+            } else {
+                targetMatrix = camp.finances[fIdx].matrix;
+                targetName = camp.finances[fIdx].name;
+            }
+
+            document.getElementById('matrixContainer').classList.remove('hidden');
+            document.getElementById('matrixTitle').innerText = "กำลังแก้ไขเรทของ: " + targetName;
+
+            const tbody = document.getElementById('rateMatrixBody');
+            tbody.innerHTML = '';
+            
+            tiers.forEach(tier => {
+                const tr = document.createElement('tr');
+                let rowHtml = `<td class="row-header">${tier}%</td>`;
+                terms.forEach(term => {
+                    const val = (targetMatrix[tier] && targetMatrix[tier][term]) ? targetMatrix[tier][term] : 0;
+                    rowHtml += `<td><input type="number" step="0.01" class="rate-input" data-tier="${tier}" data-term="${term}" value="${val}"></td>`;
+                });
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function saveCurrentMatrix() {
+            const inputs = document.querySelectorAll('.rate-input');
+            let newMatrix = {};
+            tiers.forEach(t => newMatrix[t] = {});
+            inputs.forEach(input => {
+                const t = input.dataset.tier;
+                const tm = input.dataset.term;
+                newMatrix[t][tm] = parseFloat(input.value) || 0;
+            });
+
+            if (editFinIdx === -1) {
+                appData.series[editSIdx].campaigns[editCampIdx].matrix = newMatrix;
+            } else {
+                appData.series[editSIdx].campaigns[editCampIdx].finances[editFinIdx].matrix = newMatrix;
+            }
+            saveData();
+            alert("บันทึกตารางดอกเบี้ยเรียบร้อย");
+        }
+
+
+        // --- SETTINGS (Series/Color) LOGIC ---
+        function renderSeriesList() {
+            const list = document.getElementById('seriesList');
+            const selectInterest = document.getElementById('selectSeriesInterest');
+            const currentSel = selectInterest.value;
+
+            list.innerHTML = '';
+            selectInterest.innerHTML = '<option value="-1">-- เลือกรุ่นรถ --</option>';
+
+            appData.series.forEach((s, index) => {
+                const div = document.createElement('div');
+                div.className = 'list-item flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:border-blue-400';
+                div.onclick = (e) => { if(e.target.closest('.delete-btn')) return; editSeries(index); };
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-folder text-blue-500"></i>
+                        <div><div class="font-bold text-gray-800">${s.name}</div><div class="text-xs text-gray-500">${s.subModels.length} รุ่น, ${s.campaigns ? s.campaigns.length : 0} แคมเปญ</div></div>
+                    </div>
+                    <button class="delete-btn text-red-400 hover:text-red-600 p-2" onclick="deleteSeries(${index})"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(div);
+
+                const opt = document.createElement('option'); opt.value = index; opt.text = s.name; selectInterest.appendChild(opt);
+            });
+            selectInterest.value = currentSel;
+        }
+        function addSeries() {
+            const name = document.getElementById('newSeriesName').value.trim();
+            if(name) { appData.series.push({ id: Date.now(), name: name, subModels: [], colors: [], campaigns: JSON.parse(JSON.stringify(defaultCampaigns)) }); document.getElementById('newSeriesName').value = ''; saveData(); }
+        }
+        function deleteSeries(index) { if(confirm('ลบข้อมูลนี้?')) { appData.series.splice(index, 1); if(editSIdx === index) closeSeriesDetail(); saveData(); } }
+        
+        function editSeries(index) {
+            editSIdx = index;
+            document.getElementById('seriesDetailPanel').classList.remove('hidden');
+            document.getElementById('editingSeriesName').innerText = "จัดการ: " + appData.series[index].name;
+            renderDetailLists();
+            document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' });
+        }
+        function closeSeriesDetail() { editSIdx = -1; document.getElementById('seriesDetailPanel').classList.add('hidden'); }
+        
+        function renderDetailLists() {
+            if(editSIdx === -1) return;
+            const series = appData.series[editSIdx];
+            const subList = document.getElementById('subModelList'); subList.innerHTML = '';
+            series.subModels.forEach((sub, idx) => { subList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${sub.name} <span class="text-gray-400">(${fmt(sub.price)})</span></span><button onclick="deleteSubModel(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; });
+            const colorList = document.getElementById('colorList'); colorList.innerHTML = '';
+            series.colors.forEach((col, idx) => { colorList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${col.name} <span class="text-blue-500 text-xs">+${fmt(col.price)}</span></span><button onclick="deleteColor(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; });
+        }
+        function addSubModel() {
+            if(editSIdx === -1) return;
+            const name = document.getElementById('newSubName').value.trim();
+            const price = parseFloat(document.getElementById('newSubPrice').value);
+            if(name && !isNaN(price)) { appData.series[editSIdx].subModels.push({ name, price }); document.getElementById('newSubName').value = ''; document.getElementById('newSubPrice').value = ''; saveData(); }
+        }
+        function deleteSubModel(idx) { appData.series[editSIdx].subModels.splice(idx, 1); saveData(); }
+        function addColor() {
+            if(editSIdx === -1) return;
+            const name = document.getElementById('newColorName').value.trim();
+            const price = parseFloat(document.getElementById('newColorPrice').value) || 0;
+            if(name) { appData.series[editSIdx].colors.push({ name, price }); document.getElementById('newColorName').value = ''; document.getElementById('newColorPrice').value = ''; saveData(); }
+        }
+        function deleteColor(idx) { appData.series[editSIdx].colors.splice(idx, 1); saveData(); }
+
+        // --- EDITOR LOGIC ---
+        function populateSeriesDropdown() {
+            const sSelect = document.getElementById('selectSeries');
+            const currentVal = sSelect.value;
+            sSelect.innerHTML = '<option value="-1">-- เลือกรุ่นหลัก --</option>';
+            appData.series.forEach((s, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = s.name; sSelect.appendChild(opt); });
+            if(currentVal != -1 && currentVal < appData.series.length) sSelect.value = currentVal;
+        }
+        
+        function onSeriesChange() {
+            const seriesIdx = document.getElementById('selectSeries').value;
+            const subSelect = document.getElementById('selectSubModel');
+            const colSelect = document.getElementById('selectColor');
+            const campSelect = document.getElementById('selectCampaign');
+
+            subSelect.innerHTML = '<option value="-1">-- เลือกรุ่นย่อย --</option>';
+            colSelect.innerHTML = '<option value="-1">-- เลือกสี --</option>';
+            campSelect.innerHTML = '<option value="-1">-- เลือกแคมเปญ --</option>';
+            document.getElementById('carPrice').value = 0; document.getElementById('colorPrice').value = 0;
+            
+            if(seriesIdx != -1) {
+                subSelect.disabled = false; colSelect.disabled = false; campSelect.disabled = false;
+                const series = appData.series[seriesIdx];
+                series.subModels.forEach((sub, idx) => { subSelect.innerHTML += `<option value="${idx}">${sub.name} (${fmt(sub.price)})</option>`; });
+                series.colors.forEach((col, idx) => { colSelect.innerHTML += `<option value="${idx}">${col.name} ${col.price>0?'+'+fmt(col.price):''}</option>`; });
+                
+                if(series.campaigns) {
+                    series.campaigns.forEach((camp, idx) => {
+                        campSelect.innerHTML += `<option value="${idx}">${camp.name}</option>`;
+                    });
+                }
+            } else { subSelect.disabled = true; colSelect.disabled = true; campSelect.disabled = true; }
+            onCampaignSelect(); // Reset finance selector
+        }
+
+        function onSubModelChange() {
+            const sIdx = document.getElementById('selectSeries').value; const subIdx = document.getElementById('selectSubModel').value;
+            document.getElementById('carPrice').value = (sIdx!=-1 && subIdx!=-1) ? appData.series[sIdx].subModels[subIdx].price : 0;
+            calculate();
+        }
+        function onColorChange() {
+            const sIdx = document.getElementById('selectSeries').value; const cIdx = document.getElementById('selectColor').value;
+            document.getElementById('colorPrice').value = (sIdx!=-1 && cIdx!=-1) ? appData.series[sIdx].colors[cIdx].price : 0;
             calculate();
         }
 
-        // 2. Sync Down Payment (Percent <-> Amount)
-        function updateDownAmount() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0;
-            const colorPrice = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const discount = parseFloat(document.getElementById('discount').value) || 0;
-            
-            // Base Calculation Price for Finance usually includes color but excludes discount for down payment calculation base
-            // But usually Down % is calculated on (Car Price + Color)
-            const basePrice = price + colorPrice;
-            
-            const percent = parseFloat(document.getElementById('downPercent').value) || 0;
-            const amount = basePrice * (percent / 100);
-            
-            document.getElementById('downAmount').value = amount.toFixed(0);
-            calculate(false); // false means don't recalc down amount again
+        function onCampaignSelect() {
+            const sIdx = document.getElementById('selectSeries').value;
+            const campIdx = document.getElementById('selectCampaign').value;
+            const finContainer = document.getElementById('financeSelectorContainer');
+            const finSelect = document.getElementById('selectFinanceCo');
+
+            finSelect.innerHTML = '';
+            finContainer.classList.add('hidden');
+
+            if(sIdx != -1 && campIdx != -1) {
+                const camp = appData.series[sIdx].campaigns[campIdx];
+                // Check if campaign has specific finances
+                if(camp.finances && camp.finances.length > 0) {
+                    finContainer.classList.remove('hidden');
+                    camp.finances.forEach((f, idx) => {
+                         finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`;
+                    });
+                }
+            }
+            calculateInterestAuto();
         }
 
-        function updateDownPercent() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0;
-            const colorPrice = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const basePrice = price + colorPrice;
-            const amount = parseFloat(document.getElementById('downAmount').value) || 0;
+        // --- CALCULATION ---
+        function getInterestRate(matrix, downPct, term) {
+            let selectedTier = 0;
+            const sortedTiers = tiers.slice().sort((a,b)=>a-b);
+            for(let t of sortedTiers) {
+                if(downPct >= t) selectedTier = t;
+            }
+            if(matrix[selectedTier] && matrix[selectedTier][term]) {
+                return matrix[selectedTier][term];
+            }
+            return 0;
+        }
 
-            if(basePrice > 0) {
-                const percent = (amount / basePrice) * 100;
-                document.getElementById('downPercent').value = percent.toFixed(2);
+        function calculateInterestAuto() {
+            const sIdx = document.getElementById('selectSeries').value;
+            const campIdx = document.getElementById('selectCampaign').value;
+            const downPct = parseFloat(document.getElementById('downPercent').value) || 0;
+            const discount = parseFloat(document.getElementById('interestDiscount').value) || 0;
+            
+            // Check Finance
+            const finContainer = document.getElementById('financeSelectorContainer');
+            let useFinance = !finContainer.classList.contains('hidden');
+            let finIdx = document.getElementById('selectFinanceCo').value;
+
+            if(sIdx != -1 && campIdx != -1) {
+                const camp = appData.series[sIdx].campaigns[campIdx];
+                let activeMatrix = camp.matrix; // Default to general
+
+                if(useFinance && finIdx != null && camp.finances[finIdx]) {
+                    activeMatrix = camp.finances[finIdx].matrix;
+                }
+
+                if(activeMatrix) {
+                    const r48 = Math.max(0, getInterestRate(activeMatrix, downPct, 48) - discount);
+                    const r60 = Math.max(0, getInterestRate(activeMatrix, downPct, 60) - discount);
+                    const r72 = Math.max(0, getInterestRate(activeMatrix, downPct, 72) - discount);
+                    const r84 = Math.max(0, getInterestRate(activeMatrix, downPct, 84) - discount);
+                    
+                    document.getElementById('rate48').value = r48.toFixed(2);
+                    document.getElementById('rate60').value = r60.toFixed(2);
+                    document.getElementById('rate72').value = r72.toFixed(2);
+                    document.getElementById('rate84').value = r84.toFixed(2);
+                }
             }
             calculate(false);
         }
 
-        // 3. Main Calculation Logic
-        function calculate(recalcDown = true) {
-            // Get Inputs
-            const carPrice = parseFloat(document.getElementById('carPrice').value) || 0;
-            const colorPrice = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const discount = parseFloat(document.getElementById('discount').value) || 0; // Sub-down
-            
-            const totalPrice = carPrice + colorPrice;
-            const netPrice = totalPrice - discount; // ราคารถสุทธิ (ในทางปฏิบัติบางที่หักส่วนลดที่เงินดาวน์ แต่ที่นี่ทำตาม logic ทั่วไปคือหักราคารถ หรือ หักเงินดาวน์ผลลัพธ์ยอดจัดเท่ากัน)
+        let currentMode = 'finance';
+        const dateOptions = { day: 'numeric', month: 'short', year: '2-digit' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('th-TH', dateOptions);
+        const fmt = (num) => parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-            // Re-sync down amount if needed (e.g. if price changed)
-            if (recalcDown) {
-                 const percent = parseFloat(document.getElementById('downPercent').value) || 0;
-                 const downAmount = totalPrice * (percent / 100);
-                 document.getElementById('downAmount').value = downAmount.toFixed(0);
+        function updateCustomerInfo() {
+            document.getElementById('dispCustName').innerText = document.getElementById('custName').value || "ชื่อลูกค้า";
+            document.getElementById('dispCustTel').innerText = "Tel: " + (document.getElementById('custTel').value || "...");
+        }
+        function setMode(mode) {
+            currentMode = mode;
+            const btnF = document.getElementById('btn-mode-finance'); const btnC = document.getElementById('btn-mode-cash');
+            const sectionFinance = document.getElementById('finance-section');
+            if(mode === 'finance') {
+                btnF.classList.add('active'); btnF.classList.remove('inactive'); btnC.classList.remove('active'); btnC.classList.add('inactive');
+                sectionFinance.classList.remove('hidden');
+                document.getElementById('lbl-discount-type').innerText = "(ส่วนลดเงินดาวน์)";
+            } else {
+                btnC.classList.add('active'); btnC.classList.remove('inactive'); btnF.classList.remove('active'); btnF.classList.add('inactive');
+                sectionFinance.classList.add('hidden');
+                document.getElementById('lbl-discount-type').innerText = "(ส่วนลดราคารถ)";
+            }
+            calculate();
+        }
+        function updateDownAmount() {
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const pct = parseFloat(document.getElementById('downPercent').value) || 0;
+            document.getElementById('downAmount').value = ((price + color) * pct / 100).toFixed(0);
+            calculateInterestAuto();
+        }
+        function updateDownPercent() {
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const amt = parseFloat(document.getElementById('downAmount').value) || 0;
+            if(price+color > 0) document.getElementById('downPercent').value = (amt / (price+color) * 100).toFixed(2);
+            calculateInterestAuto();
+        }
+        function updateFullModelName() {
+            const sIdx = document.getElementById('selectSeries').value;
+            const subIdx = document.getElementById('selectSubModel').value;
+            const cIdx = document.getElementById('selectColor').value;
+            let text = "เลือกรุ่นรถ";
+            if(sIdx != -1 && subIdx != -1) {
+                text = `${appData.series[sIdx].name} ${appData.series[sIdx].subModels[subIdx].name}`;
+                if(cIdx != -1) text += ` (${appData.series[sIdx].colors[cIdx].name})`;
+            }
+            document.getElementById('dispModelFull').innerText = text;
+        }
+        function calculate(recalcDown = true) {
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const totalCarPrice = price + color;
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            
+            const reg = parseFloat(document.getElementById('regFee').value) || 0;
+            const ins = parseFloat(document.getElementById('insurance').value) || 0;
+            const red = parseFloat(document.getElementById('redPlate').value) || 0;
+            const book = parseFloat(document.getElementById('bookingDeduct').value) || 0;
+            const adv = parseFloat(document.getElementById('advInstallment').value) || 0;
+            const vat = parseFloat(document.getElementById('vatFee').value) || 0;
+            const acc = parseFloat(document.getElementById('accFee').value) || 0;
+
+            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice);
+            document.getElementById('sumReg').innerText = fmt(reg);
+            document.getElementById('sumInsure').innerText = fmt(ins);
+            document.getElementById('sumRedPlate').innerText = fmt(red);
+            document.getElementById('sumAdvInst').innerText = fmt(adv);
+            document.getElementById('sumVat').innerText = fmt(vat);
+            document.getElementById('sumAcc').innerText = fmt(acc);
+            document.getElementById('sumBooking').innerText = "- " + fmt(book);
+            document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
+
+            const campIdx = document.getElementById('selectCampaign').value;
+            const sIdx = document.getElementById('selectSeries').value;
+            let campName = "";
+            let finName = "";
+
+            if(sIdx != -1 && campIdx != -1 && appData.series[sIdx].campaigns && appData.series[sIdx].campaigns[campIdx]) {
+                 const camp = appData.series[sIdx].campaigns[campIdx];
+                 campName = camp.name;
+                 // Get Finance Name if selected
+                 const finContainer = document.getElementById('financeSelectorContainer');
+                 if(!finContainer.classList.contains('hidden')) {
+                     const fSelect = document.getElementById('selectFinanceCo');
+                     if(fSelect.value != "") {
+                         const finObj = camp.finances[fSelect.value];
+                         if(finObj) finName = finObj.name;
+                     }
+                 }
+            }
+            document.getElementById('dispCampName').innerText = campName;
+
+            const dispFin = document.getElementById('dispFinanceCo');
+            if(finName) {
+                dispFin.innerText = finName;
+                dispFin.classList.remove('hidden');
+            } else {
+                dispFin.classList.add('hidden');
             }
 
-            const downAmount = parseFloat(document.getElementById('downAmount').value) || 0;
-            const financeAmount = totalPrice - downAmount - discount; // ยอดจัด = ราคารถ + สี - ดาวน์ - ส่วนลด(ซับดาวน์)
+            // Theme is already set but ensure consistency
+            const themeColor = currentThemeColor; 
+            const badge = document.getElementById('badge-mode');
 
-            // Update UI: Prices
-            document.getElementById('dispNetPrice').innerText = fmt(totalPrice) + " บาท"; // แสดงราคาเต็ม + สี
-            document.getElementById('dispFinance').innerText = fmt(financeAmount) + " บาท";
-            document.getElementById('dispDownAmount').innerText = fmt(downAmount) + " บาท";
-            document.getElementById('dispDownPercent').innerText = document.getElementById('downPercent').value;
-
-            // Calculate Installments
-            const terms = [48, 60, 72, 84];
-            terms.forEach(term => {
-                const rateId = 'rate' + term;
-                const rate = parseFloat(document.getElementById(rateId).value) || 0;
-                
-                // Update Display Rate
-                document.getElementById('dispRate' + term).innerText = rate.toFixed(2) + '%';
-
-                // Formula: (Finance * Rate * Year) + Finance / Months
-                const years = term / 12;
-                const totalInterest = financeAmount * (rate / 100) * years;
-                const totalLoan = financeAmount + totalInterest;
-                const monthly = totalLoan / term;
-
-                document.getElementById('inst' + term).innerText = fmt(monthly);
-            });
-
-            // Calculate Pickup Day Cost
-            const regFee = parseFloat(document.getElementById('regFee').value) || 0;
-            const redPlate = parseFloat(document.getElementById('redPlate').value) || 0;
-            const booking = parseFloat(document.getElementById('bookingDeduct').value) || 0;
-            const insurance = parseFloat(document.getElementById('insurance').value) || 0;
-
-            document.getElementById('sumDown').innerText = fmt(downAmount);
-            document.getElementById('sumRedPlate').innerText = fmt(redPlate);
-            document.getElementById('sumReg').innerText = fmt(regFee);
-            document.getElementById('sumInsure').innerText = fmt(insurance);
-            document.getElementById('sumBooking').innerText = "- " + fmt(booking);
-
-            const pickupTotal = downAmount + regFee + redPlate + insurance - booking;
-            document.getElementById('grandTotal').innerText = fmt(pickupTotal) + " บาท";
-
-            renderGifts();
+            if (currentMode === 'finance') {
+                document.getElementById('preview-finance-table').classList.remove('hidden');
+                badge.innerText = "FINANCE";
+                document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์";
+                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
+                if(recalcDown) {
+                    const pct = parseFloat(document.getElementById('downPercent').value) || 0;
+                    document.getElementById('downAmount').value = (totalCarPrice * pct / 100).toFixed(0);
+                }
+                const downAmt = parseFloat(document.getElementById('downAmount').value) || 0;
+                const financeAmt = totalCarPrice - downAmt; 
+                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                [48, 60, 72, 84].forEach(term => {
+                    const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
+                    document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
+                    const interestTotal = financeAmt * (rate/100) * (term/12);
+                    const monthly = (financeAmt + interestTotal) / term;
+                    document.getElementById('inst'+term).innerText = fmt(monthly);
+                });
+                document.getElementById('sumDown').innerText = fmt(downAmt);
+                const expenses = downAmt + reg + ins + red + adv + vat + acc;
+                const deductions = book + discount;
+                const grandTotal = expenses - deductions;
+                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+            } else {
+                document.getElementById('preview-finance-table').classList.add('hidden');
+                badge.innerText = "CASH";
+                document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
+                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
+                document.getElementById('sumDown').innerText = fmt(totalCarPrice);
+                const expenses = totalCarPrice + reg + ins + red + adv + vat + acc;
+                const deductions = book + discount;
+                const grandTotal = expenses - deductions;
+                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+            }
         }
-
-        // 4. Render Gifts
         function renderGifts() {
             const raw = document.getElementById('giftList').value;
-            const items = raw.split(',').map(s => s.trim()).filter(s => s !== '');
-            
-            const listContainer = document.getElementById('displayGiftList');
-            listContainer.innerHTML = '';
-            
-            items.forEach(item => {
-                const li = document.createElement('li');
-                li.innerText = item;
-                listContainer.appendChild(li);
-            });
+            const items = raw.split(',').map(s => s.trim()).filter(s => s);
+            const list = document.getElementById('displayGiftList');
+            list.innerHTML = '';
+            items.forEach(i => { list.innerHTML += `<li>${i}</li>`; });
         }
-
-        // 5. Save Image Function
-        function saveImage() {
-            const node = document.getElementById('quotation-card');
-            
-            html2canvas(node, { scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'ใบเสนอราคา-' + new Date().getTime() + '.png';
-                link.href = canvas.toDataURL();
-                link.click();
+        function switchTab(tabName) {
+            ['settings','interest','editor','preview'].forEach(t => { 
+                document.getElementById('view-'+t).classList.add('hidden'); 
+                document.getElementById('tab-'+t).classList.remove('active'); 
             });
+            document.getElementById('view-'+tabName).classList.remove('hidden');
+            document.getElementById('tab-'+tabName).classList.add('active');
+            const btnBack=document.getElementById('btn-back-edit'), btnGo=document.getElementById('btn-go-preview'), btnSave=document.getElementById('btn-save-img');
+            if(tabName==='editor') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.remove('hidden'); }
+            else if(tabName==='settings' || tabName==='interest') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.add('hidden'); }
+            else { 
+                updateFullModelName(); calculate(); renderGifts(); updateCustomerInfo(); 
+                btnBack.classList.remove('hidden'); btnSave.classList.remove('hidden'); btnGo.classList.add('hidden'); 
+            }
+            window.scrollTo(0,0);
         }
+        function generateImage() {
+            const modal=document.getElementById('imageModal'), content=document.getElementById('modalContent');
+            modal.classList.remove('hidden'); content.innerHTML='<span class="text-gray-400 text-sm">กำลังสร้างรูปภาพ...</span>';
+            setTimeout(()=>{ html2canvas(document.getElementById('quotation-card'), {scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{ content.innerHTML=''; const img=document.createElement('img'); img.src=canvas.toDataURL("image/png"); img.className="w-full rounded border"; content.appendChild(img); }); },500);
+        }
+        function closeModal() { document.getElementById('imageModal').classList.add('hidden'); }
 
-        // Initialize
-        calculate();
-        renderGifts();
-
+        initData(); switchTab('editor');
     </script>
 </body>
 </html>
