@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - V11.9.2 (Net Down Base)</title>
+    <title>Honda Quotation - V13.2 (History Search)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -39,6 +39,13 @@
             padding-bottom: constant(safe-area-inset-bottom);
             margin-bottom: 5px;
         }
+
+        /* Animation for new gift input */
+        .fade-in-up { animation: fadeInUp 0.3s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Animation for removing */
+        .fade-out { animation: fadeOut 0.2s ease-in forwards; }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); height: 0; margin: 0; padding: 0; } }
     </style>
 </head>
 <body>
@@ -53,6 +60,9 @@
         <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn active flex-1 text-center h-full flex flex-col items-center justify-center">
             <i class="fa-solid fa-pen-to-square mb-1"></i> ทำใบเสนอราคา
         </button>
+        <button onclick="switchTab('history')" id="tab-history" class="tab-btn flex-1 text-center h-full flex flex-col items-center justify-center">
+            <i class="fa-solid fa-clock-rotate-left mb-1"></i> ประวัติ
+        </button>
         <button onclick="switchTab('preview')" id="tab-preview" class="tab-btn flex-1 text-center h-full flex flex-col items-center justify-center">
             <i class="fa-solid fa-file-invoice mb-1"></i> ตัวอย่าง
         </button>
@@ -64,7 +74,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.11.9.2) คำนวณ % ดาวน์จากยอดหลังหักส่วนลดแล้ว
+                <i class="fa-solid fa-circle-info"></i> (V.13.2) ระบบค้นหาประวัติ
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -104,7 +114,6 @@
             </div>
             
             <button onclick="resetToDefault()" class="w-full py-3 text-red-500 text-sm underline mt-8">ล้างข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น</button>
-             <button onclick="clearSession()" class="w-full py-2 text-gray-400 text-xs mt-2">ล้างเฉพาะข้อมูลที่กรอกค้างไว้</button>
         </div>
 
         <div id="view-interest" class="space-y-4 hidden animate-fade-in pb-20">
@@ -165,12 +174,29 @@
             </div>
         </div>
 
+        <div id="view-history" class="space-y-4 hidden animate-fade-in pb-20">
+            <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-lg text-sm text-indigo-800">
+                <i class="fa-solid fa-clock-rotate-left"></i> ประวัติการบันทึกใบเสนอราคา
+            </div>
+            
+            <div class="relative">
+                <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                <input type="text" id="historySearchInput" placeholder="ค้นหาชื่อ, เบอร์ หรือวันที่..." class="input-mobile pl-10" oninput="renderHistoryList()">
+            </div>
+
+            <div id="historyListContainer" class="space-y-3">
+                <div class="text-center text-gray-400 py-10">ไม่มีประวัติที่บันทึกไว้</div>
+            </div>
+             <button onclick="clearAllHistory()" class="w-full py-2 text-red-400 text-xs mt-4">ล้างประวัติทั้งหมด</button>
+        </div>
+
         <div id="view-editor" class="space-y-4 animate-fade-in pb-32">
+            
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-user text-green-600"></i> ข้อมูลลูกค้า</h3>
                 <div class="grid grid-cols-1 gap-3">
                     <input type="text" id="custName" class="input-mobile" placeholder="ชื่อ-นามสกุล ลูกค้า" oninput="updateCustomerInfo()">
-                    <input type="text" id="custTel" class="input-mobile" placeholder="เบอร์โทรศัพท์" oninput="updateCustomerInfo()">
+                    <input type="text" id="custTel" class="input-mobile" placeholder="เบอร์โทรศัพท์/ติดต่อ" oninput="updateCustomerInfo()">
                 </div>
             </div>
             
@@ -295,8 +321,32 @@
                 </div>
                 <hr class="my-3 border-gray-100">
                 <div><label class="text-xs text-gray-500 ml-1">หัก เงินมัดจำจอง</label><input type="number" id="bookingDeduct" class="input-mobile text-red-600" value="0" oninput="calculate()"></div>
-                <div class="mt-3"><label class="text-xs text-gray-500 ml-1">รายการของแถม</label><textarea id="giftList" class="input-mobile h-24 text-sm" placeholder="พิมพ์รายการของแถม..." oninput="renderGifts()">ประกันภัยชั้น 1, พรบ., ฟิล์มเซรามิก, กรอบป้าย,</textarea></div>
+                
+                <div class="mt-4">
+                    <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 mb-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-gray-600"><i class="fa-solid fa-list-check"></i> ชุดของแถม (Loadouts)</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="giftPresetSelect" class="input-mobile py-1 text-sm flex-[3]" onchange="loadGiftPreset()">
+                                <option value="-1">-- เลือกชุดที่บันทึกไว้ --</option>
+                            </select>
+                            <button onclick="saveGiftPreset()" class="bg-blue-600 text-white px-3 rounded text-sm flex-1"><i class="fa-solid fa-save"></i> บันทึก</button>
+                            <button onclick="deleteGiftPreset()" class="bg-red-100 text-red-500 px-3 rounded text-sm"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <label class="text-xs text-gray-500 ml-1 font-bold">รายการของแถม (เว้นว่างเพื่อลบ)</label>
+                    <input type="hidden" id="giftList"> <div id="giftInputContainer" class="mt-2 space-y-2"></div>
+                </div>
             </div>
+
+            <button onclick="saveToHistory()" class="w-full py-4 text-white bg-green-600 rounded-xl font-bold text-base shadow-lg shadow-green-200 hover:bg-green-700 transition-all mt-6">
+                <i class="fa-solid fa-floppy-disk mr-2"></i> บันทึกใบเสนอราคานี้ (ลงประวัติ)
+            </button>
+
+            <button onclick="clearSession()" class="w-full py-4 text-red-600 bg-red-50 border border-red-200 rounded-xl font-bold text-base shadow-sm hover:bg-red-100 transition-colors mt-2 mb-2">
+                <i class="fa-solid fa-trash-can mr-2"></i> ล้างข้อมูลที่กรอกค้างไว้ (เริ่มใหม่)
+            </button>
         </div>
 
         <div id="view-preview" class="hidden pb-48">
@@ -392,7 +442,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-sm border-l-4 border-green-500 pl-2 mb-2">รายการของแถม</h3>
-                        <ul id="displayGiftList" class="text-xs text-gray-600 list-disc pl-5 grid grid-cols-2 gap-1"></ul>
+                        <ul id="displayGiftList" class="text-[10px] text-gray-600 list-decimal pl-4 grid grid-cols-3 gap-x-2 gap-y-1"></ul>
                     </div>
                 </div>
             </div>
@@ -416,179 +466,49 @@
     </div>
 
     <script>
-        // --- 1. DATA STRUCTURE (COMPLETE V11) ---
+        // --- 1. DATA STRUCTURE (UNCHANGED V11) ---
         const tiers = [0, 10, 15, 20, 25];
         const terms = [48, 60, 72, 84];
+        const DEFAULT_GIFTS = "ประกันภัยชั้น 1, พรบ., ฟิล์มเซรามิก, กรอบป้าย";
 
-        // --- RATE DEFINITIONS ---
-        // 1. CITY (Also City HB)
-        const city_TL1 = {
-            0: {48:1.79, 60:2.59, 72:3.19, 84:3.69},
-            10: {48:1.39, 60:2.19, 72:2.99, 84:3.49},
-            15: {48:1.09, 60:1.59, 72:2.19, 84:2.99},
-            20: {48:0.39, 60:0.99, 72:1.69, 84:2.39},
-            25: {48:0.00, 60:0.59, 72:1.29, 84:1.99}
-        };
+        let giftPresets = []; 
+        let historyList = []; 
+
+        // --- RATE DEFINITIONS (UNCHANGED) ---
+        const city_TL1 = { 0: {48:1.79, 60:2.59, 72:3.19, 84:3.69}, 10: {48:1.39, 60:2.19, 72:2.99, 84:3.49}, 15: {48:1.09, 60:1.59, 72:2.19, 84:2.99}, 20: {48:0.39, 60:0.99, 72:1.69, 84:2.39}, 25: {48:0.00, 60:0.59, 72:1.29, 84:1.99} };
         const city_TL2 = city_TL1; 
-        const city_TL3 = {
-            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
-            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
-            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
-            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
-            25: {48:0.99, 60:1.99, 72:2.45, 84:2.99}
-        };
-        const city_Sub_AY = {
-            0: {48:3.90, 60:4.20, 72:4.50, 84:5.10},
-            10: {48:3.50, 60:3.90, 72:4.20, 84:4.60},
-            15: {48:3.00, 60:3.20, 72:3.60, 84:4.10},
-            20: {48:2.40, 60:2.60, 72:3.00, 84:3.60},
-            25: {48:2.19, 60:2.44, 72:2.84, 84:3.40}
-        };
-        const city_Sub_HLTC = {
-            0: {48:3.55, 60:3.95, 72:4.25, 84:4.65},
-            10: {48:3.55, 60:3.95, 72:4.25, 84:4.65},
-            15: {48:3.05, 60:3.25, 72:3.65, 84:4.15},
-            20: {48:2.45, 60:2.65, 72:3.05, 84:3.65},
-            25: {48:2.25, 60:2.49, 72:2.89, 84:3.45}
-        };
+        const city_TL3 = { 0: {48:3.45, 60:3.85, 72:4.25, 84:4.79}, 10: {48:3.09, 60:3.59, 72:3.89, 84:4.19}, 15: {48:2.49, 60:2.85, 72:3.29, 84:3.69}, 20: {48:1.89, 60:2.29, 72:2.69, 84:3.19}, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
+        const city_Sub_AY = { 0: {48:3.90, 60:4.20, 72:4.50, 84:5.10}, 10: {48:3.50, 60:3.90, 72:4.20, 84:4.60}, 15: {48:3.00, 60:3.20, 72:3.60, 84:4.10}, 20: {48:2.40, 60:2.60, 72:3.00, 84:3.60}, 25: {48:2.19, 60:2.44, 72:2.84, 84:3.40} };
+        const city_Sub_HLTC = { 0: {48:3.55, 60:3.95, 72:4.25, 84:4.65}, 10: {48:3.55, 60:3.95, 72:4.25, 84:4.65}, 15: {48:3.05, 60:3.25, 72:3.65, 84:4.15}, 20: {48:2.45, 60:2.65, 72:3.05, 84:3.65}, 25: {48:2.25, 60:2.49, 72:2.89, 84:3.45} };
 
-        // 2. HR-V / CIVIC
-        const hrv_TL1 = {
-            0: {48:2.19, 60:2.79, 72:3.39, 84:3.89},
-            10: {48:1.69, 60:2.39, 72:3.19, 84:3.69},
-            15: {48:1.29, 60:1.79, 72:2.39, 84:3.19},
-            20: {48:0.59, 60:1.19, 72:1.89, 84:2.59},
-            25: {48:0.00, 60:0.79, 72:1.49, 84:2.19}
-        };
-        const hrv_TL2 = {
-            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
-            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
-            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
-            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
-            25: {48:0.99, 60:1.99, 72:2.45, 84:2.99}
-        };
-        const hrv_Sub_AY = {
-            0: {48:3.99, 60:4.29, 72:4.59, 84:5.25},
-            10: {48:3.29, 60:3.69, 72:3.79, 84:4.69},
-            15: {48:2.69, 60:2.79, 72:3.19, 84:3.59},
-            20: {48:2.29, 60:2.39, 72:2.69, 84:3.09},
-            25: {48:1.99, 60:2.29, 72:2.59, 84:2.79}
-        };
-        const hrv_Sub_HLTC = {
-            0: {48:3.19, 60:3.59, 72:3.69, 84:4.59},
-            10: {48:3.19, 60:3.59, 72:3.69, 84:4.59},
-            15: {48:2.59, 60:2.69, 72:3.09, 84:3.49},
-            20: {48:2.19, 60:2.29, 72:2.59, 84:2.99},
-            25: {48:1.89, 60:2.19, 72:2.49, 84:2.69}
-        };
+        const hrv_TL1 = { 0: {48:2.19, 60:2.79, 72:3.39, 84:3.89}, 10: {48:1.69, 60:2.39, 72:3.19, 84:3.69}, 15: {48:1.29, 60:1.79, 72:2.39, 84:3.19}, 20: {48:0.59, 60:1.19, 72:1.89, 84:2.59}, 25: {48:0.00, 60:0.79, 72:1.49, 84:2.19} };
+        const hrv_TL2 = { 0: {48:3.45, 60:3.85, 72:4.25, 84:4.79}, 10: {48:3.09, 60:3.59, 72:3.89, 84:4.19}, 15: {48:2.49, 60:2.85, 72:3.29, 84:3.69}, 20: {48:1.89, 60:2.29, 72:2.69, 84:3.19}, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
+        const hrv_Sub_AY = { 0: {48:3.99, 60:4.29, 72:4.59, 84:5.25}, 10: {48:3.29, 60:3.69, 72:3.79, 84:4.69}, 15: {48:2.69, 60:2.79, 72:3.19, 84:3.59}, 20: {48:2.29, 60:2.39, 72:2.69, 84:3.09}, 25: {48:1.99, 60:2.29, 72:2.59, 84:2.79} };
+        const hrv_Sub_HLTC = { 0: {48:3.19, 60:3.59, 72:3.69, 84:4.59}, 10: {48:3.19, 60:3.59, 72:3.69, 84:4.59}, 15: {48:2.59, 60:2.69, 72:3.09, 84:3.49}, 20: {48:2.19, 60:2.29, 72:2.59, 84:2.99}, 25: {48:1.89, 60:2.19, 72:2.49, 84:2.69} };
 
-        // 3. CR-V / ACCORD
-        const crv_TL1 = {
-            0: {48:3.45, 60:3.85, 72:4.25, 84:4.79},
-            10: {48:3.09, 60:3.59, 72:3.89, 84:4.19},
-            15: {48:2.49, 60:2.85, 72:3.29, 84:3.69},
-            20: {48:1.89, 60:2.29, 72:2.69, 84:3.19},
-            25: {48:1.00, 60:1.99, 72:2.45, 84:2.99} 
-        };
+        const crv_TL1 = { 0: {48:3.45, 60:3.85, 72:4.25, 84:4.79}, 10: {48:3.09, 60:3.59, 72:3.89, 84:4.19}, 15: {48:2.49, 60:2.85, 72:3.29, 84:3.69}, 20: {48:1.89, 60:2.29, 72:2.69, 84:3.19}, 25: {48:1.00, 60:1.99, 72:2.45, 84:2.99} };
         const accord_TL1_Diff25 = { ...crv_TL1, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
-
-        const crv_TL2 = {
-            0: {48:3.99, 60:4.29, 72:4.59, 84:5.25},
-            10: {48:3.29, 60:3.69, 72:3.79, 84:4.69},
-            15: {48:2.69, 60:2.79, 72:3.19, 84:3.59},
-            20: {48:2.29, 60:2.39, 72:2.69, 84:3.09},
-            25: {48:1.99, 60:2.29, 72:2.59, 84:2.79}
-        };
+        const crv_TL2 = { 0: {48:3.99, 60:4.29, 72:4.59, 84:5.25}, 10: {48:3.29, 60:3.69, 72:3.79, 84:4.69}, 15: {48:2.69, 60:2.79, 72:3.19, 84:3.59}, 20: {48:2.29, 60:2.39, 72:2.69, 84:3.09}, 25: {48:1.99, 60:2.29, 72:2.59, 84:2.79} };
         const crv_Sub_AY = hrv_Sub_AY; 
         const crv_Sub_HLTC = hrv_Sub_HLTC; 
 
         function createEmptyMatrix() { let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 }; }); return m; }
         function createDefaultMatrix() { return createEmptyMatrix(); }
 
-        // --- CAMPAIGN BUILDERS ---
-        const cityCampaigns = [
-            { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] },
-            { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] },
-            { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] },
-            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC }, { name: "AY (Krungsri)", matrix: city_Sub_AY } ] }
-        ];
+        const cityCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] }, { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC }, { name: "AY (Krungsri)", matrix: city_Sub_AY } ] } ];
+        const hrvCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: hrv_Sub_AY } ] } ];
+        const crvCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] } ];
+        const accordCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] } ];
 
-        const hrvCampaigns = [
-            { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: [] },
-            { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: [] },
-            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: hrv_Sub_AY } ] }
-        ];
-
-        const crvCampaigns = [
-            { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: [] },
-            { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
-            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] }
-        ];
-
-         const accordCampaigns = [
-            { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: [] },
-            { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] },
-            { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] }
-        ];
-
-        // FULL HONDA DATA
+        // FULL HONDA DATA (UNCHANGED)
         let DEFAULT_DATA = {
             series: [
-                {
-                    id: 1, name: "Honda City",
-                    subModels: [ { name: "V", price: 629000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ],
-                    colors: [ 
-                        { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
-                        { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
-                        { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(cityCampaigns))
-                },
-                {
-                    id: 2, name: "Honda City Hatchback",
-                    subModels: [ { name: "S+", price: 599000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ],
-                    colors: [ 
-                          { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 },
-                          { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 },
-                          { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(cityCampaigns))
-                },
-                {
-                    id: 3, name: "Honda HR-V e:HEV",
-                    subModels: [ { name: "E", price: 949000 }, { name: "EL", price: 1079000 }, { name: "RS", price: 1179000 } ],
-                    colors: [ 
-                        { name: "สีดำคริสตัล", price: 8000 }, { name: "สีแดงอิกไนซ์ หลังคาสีดำทูโทน", price: 10000 }, { name: "สีขาวแพลทินัม", price: 12000 },
-                        { name: "สีขาวซันไลท์", price: 12000 }, { name: "สีกากีแซนด์ หลังคาสีดำทูโทน", price: 14000 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(hrvCampaigns))
-                },
-                {
-                    id: 4, name: "Honda Civic e:HEV",
-                    subModels: [ { name: "EL+", price: 1099000 }, { name: "RS", price: 1239000 } ],
-                    colors: [ 
-                        { name: "สีดำคริสตัล", price: 8000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีแดงอิกไนต์", price: 0 },
-                        { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(hrvCampaigns))
-                },
-                {
-                    id: 5, name: "Honda CR-V e:HEV",
-                    subModels: [ { name: "E (5 Seats)", price: 1399000 }, { name: "ES (5 Seats)", price: 1549000 }, { name: "HuNT (5 Seats)", price: 1599000 }, { name: "RS (5 Seats)", price: 1659000 }, { name: "RS 4WD (5 Seats)", price: 1729000 } ],
-                    colors: [ 
-                        { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเทาเออร์เบิน", price: 10000 },
-                        { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(crvCampaigns))
-                },
-                {
-                    id: 6, name: "Honda Accord e:HEV",
-                    subModels: [ { name: "E", price: 1479000 }, { name: "EL", price: 1599000 }, { name: "RS", price: 1729000 } ],
-                    colors: [ 
-                        { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }
-                    ],
-                    campaigns: JSON.parse(JSON.stringify(accordCampaigns))
-                }
+                { id: 1, name: "Honda City", subModels: [ { name: "V", price: 629000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ], colors: [ { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 }, { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 6000 } ], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) },
+                { id: 2, name: "Honda City Hatchback", subModels: [ { name: "S+", price: 599000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ], colors: [ { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 }, { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 0 } ], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) },
+                { id: 3, name: "Honda HR-V e:HEV", subModels: [ { name: "E", price: 949000 }, { name: "EL", price: 1079000 }, { name: "RS", price: 1179000 } ], colors: [ { name: "สีดำคริสตัล", price: 8000 }, { name: "สีแดงอิกไนซ์ หลังคาสีดำทูโทน", price: 10000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีขาวซันไลท์", price: 12000 }, { name: "สีกากีแซนด์ หลังคาสีดำทูโทน", price: 14000 }, { name: "สีเทาเมทิเออรอยด์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(hrvCampaigns)) },
+                { id: 4, name: "Honda Civic e:HEV", subModels: [ { name: "EL+", price: 1099000 }, { name: "RS", price: 1239000 } ], colors: [ { name: "สีดำคริสตัล", price: 8000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(hrvCampaigns)) },
+                { id: 5, name: "Honda CR-V e:HEV", subModels: [ { name: "E (5 Seats)", price: 1399000 }, { name: "ES (5 Seats)", price: 1549000 }, { name: "HuNT (5 Seats)", price: 1599000 }, { name: "RS (5 Seats)", price: 1659000 }, { name: "RS 4WD (5 Seats)", price: 1729000 } ], colors: [ { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเทาเออร์เบิน", price: 10000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(crvCampaigns)) },
+                { id: 6, name: "Honda Accord e:HEV", subModels: [ { name: "E", price: 1479000 }, { name: "EL", price: 1599000 }, { name: "RS", price: 1729000 } ], colors: [ { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(accordCampaigns)) }
             ]
         };
 
@@ -608,6 +528,9 @@
             renderSeriesList();
             populateSeriesDropdown();
             
+            // Initial load of Presets and Session
+            loadPresetsFromStorage();
+            loadHistoryFromStorage(); // NEW
             setTimeout(restoreSession, 500); 
         }
 
@@ -618,7 +541,152 @@
             if(editSIdx !== -1) renderDetailLists();
         }
 
-        // --- SESSION MANAGEMENT (AUTO SAVE) ---
+        // --- PRESET MANAGEMENT ---
+        function loadPresetsFromStorage() {
+            const saved = localStorage.getItem('giftPresets_v1');
+            if(saved) { giftPresets = JSON.parse(saved); } else { giftPresets = []; }
+            renderPresetDropdown();
+        }
+        function renderPresetDropdown() {
+            const select = document.getElementById('giftPresetSelect');
+            select.innerHTML = '<option value="-1">-- เลือกชุดที่บันทึกไว้ --</option>';
+            giftPresets.forEach((p, index) => { const opt = document.createElement('option'); opt.value = index; opt.text = p.name + ` (${p.items.length} รายการ)`; select.appendChild(opt); });
+        }
+        function saveGiftPreset() {
+            const inputs = document.querySelectorAll('#giftInputContainer input');
+            const items = [];
+            inputs.forEach(inp => { if(inp.value.trim()) items.push(inp.value.trim()); });
+            if(items.length === 0) { alert('กรุณากรอกของแถมอย่างน้อย 1 รายการก่อนบันทึก'); return; }
+            const name = prompt("ตั้งชื่อชุดของแถมนี้:");
+            if(name) { giftPresets.push({ name: name, items: items }); localStorage.setItem('giftPresets_v1', JSON.stringify(giftPresets)); renderPresetDropdown(); alert(`บันทึกชุด "${name}" เรียบร้อย!`); }
+        }
+        function loadGiftPreset() {
+            const idx = document.getElementById('giftPresetSelect').value;
+            if(idx != -1) { const preset = giftPresets[idx]; const str = preset.items.join(','); document.getElementById('giftList').value = str; initGiftInputs(str); renderGifts(); }
+        }
+        function deleteGiftPreset() {
+            const idx = document.getElementById('giftPresetSelect').value;
+            if(idx != -1) { if(confirm(`ต้องการลบชุด "${giftPresets[idx].name}" ใช่หรือไม่?`)) { giftPresets.splice(idx, 1); localStorage.setItem('giftPresets_v1', JSON.stringify(giftPresets)); renderPresetDropdown(); } } else { alert('กรุณาเลือกชุดที่ต้องการลบก่อน'); }
+        }
+
+        // --- HISTORY MANAGEMENT (UPDATED V13.2) ---
+        function loadHistoryFromStorage() {
+            const saved = localStorage.getItem('savedQuotations_v1');
+            if(saved) { historyList = JSON.parse(saved); } else { historyList = []; }
+            renderHistoryList();
+        }
+
+        function saveToHistory() {
+            // Get Current Data via Session Logic
+            const sessionData = {
+                custName: document.getElementById('custName').value,
+                custTel: document.getElementById('custTel').value,
+                theme: currentThemeColor,
+                mode: currentMode,
+                seriesIdx: document.getElementById('selectSeries').value,
+                subIdx: document.getElementById('selectSubModel').value,
+                colorIdx: document.getElementById('selectColor').value,
+                discount: document.getElementById('discount').value,
+                discountCarPrice: document.getElementById('discountCarPrice').value, 
+                campIdx: document.getElementById('selectCampaign').value,
+                finIdx: document.getElementById('selectFinanceCo').value,
+                intDiscount: document.getElementById('interestDiscount').value,
+                downPercent: document.getElementById('downPercent').value,
+                downAmount: document.getElementById('downAmount').value,
+                reg: document.getElementById('regFee').value,
+                ins: document.getElementById('insurance').value,
+                red: document.getElementById('redPlate').value,
+                adv: document.getElementById('advInstallment').value,
+                vat: document.getElementById('vatFee').value,
+                acc: document.getElementById('accFee').value,
+                book: document.getElementById('bookingDeduct').value,
+                gift: document.getElementById('giftList').value
+            };
+
+            const timestamp = new Date().toLocaleString('th-TH');
+            const name = sessionData.custName ? sessionData.custName : "ลูกค้าทั่วไป";
+            const contact = sessionData.custTel ? ` / ${sessionData.custTel}` : "";
+            const title = `${name}${contact} / ${timestamp}`;
+
+            const historyItem = {
+                id: Date.now(), // Unique ID
+                title: title,
+                data: sessionData
+            };
+
+            historyList.unshift(historyItem); // Add to top
+            localStorage.setItem('savedQuotations_v1', JSON.stringify(historyList));
+            document.getElementById('historySearchInput').value = ''; // Clear search
+            renderHistoryList();
+            alert(`บันทึกประวัติเรียบร้อย!\n"${title}"`);
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyListContainer');
+            const searchInput = document.getElementById('historySearchInput');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+            // FILTER LOGIC
+            const filteredList = historyList.filter(item => {
+                if(!searchTerm) return true;
+                const matchTitle = item.title.toLowerCase().includes(searchTerm);
+                const matchName = item.data.custName && item.data.custName.toLowerCase().includes(searchTerm);
+                const matchTel = item.data.custTel && item.data.custTel.toLowerCase().includes(searchTerm);
+                return matchTitle || matchName || matchTel;
+            });
+
+            if(filteredList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">...ไม่พบข้อมูล...</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            filteredList.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:border-indigo-300 transition-colors";
+                // NOTE: Passing item.id instead of index for safer deletion when searching
+                div.innerHTML = `
+                    <div onclick="loadHistoryItem(${item.id})">
+                        <div class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-file-lines text-indigo-500 mr-2"></i>${item.title}</div>
+                        <div class="text-xs text-gray-500 mt-1 pl-6">คลิกเพื่อโหลดข้อมูล</div>
+                    </div>
+                    <button onclick="deleteHistoryItem(${item.id})" class="text-red-300 hover:text-red-500 px-3 py-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function loadHistoryItem(id) {
+            if(confirm('ต้องการโหลดข้อมูลจากประวัตินี้หรือไม่? ข้อมูลปัจจุบันที่ยังไม่บันทึกจะถูกทับ')) {
+                const item = historyList.find(x => x.id == id);
+                if(item) {
+                    localStorage.setItem('quotationSession_v1', JSON.stringify(item.data));
+                    restoreSession();
+                    switchTab('editor');
+                }
+            }
+        }
+
+        function deleteHistoryItem(id) {
+            if(confirm('ต้องการลบประวัตินี้ถาวรหรือไม่?')) {
+                const index = historyList.findIndex(x => x.id == id);
+                if (index > -1) {
+                    historyList.splice(index, 1);
+                    localStorage.setItem('savedQuotations_v1', JSON.stringify(historyList));
+                    renderHistoryList();
+                }
+            }
+        }
+
+        function clearAllHistory() {
+             if(confirm('ยืนยันลบประวัติทั้งหมด? ไม่สามารถกู้คืนได้')) {
+                historyList = [];
+                localStorage.setItem('savedQuotations_v1', JSON.stringify(historyList));
+                renderHistoryList();
+            }
+        }
+
+        // --- SESSION MANAGEMENT ---
         function saveSession() {
             const sessionData = {
                 custName: document.getElementById('custName').value,
@@ -628,19 +696,13 @@
                 seriesIdx: document.getElementById('selectSeries').value,
                 subIdx: document.getElementById('selectSubModel').value,
                 colorIdx: document.getElementById('selectColor').value,
-                
-                // Discount
                 discount: document.getElementById('discount').value,
-                discountCarPrice: document.getElementById('discountCarPrice').value, // NEW
-                
-                // Finance
+                discountCarPrice: document.getElementById('discountCarPrice').value, 
                 campIdx: document.getElementById('selectCampaign').value,
                 finIdx: document.getElementById('selectFinanceCo').value,
                 intDiscount: document.getElementById('interestDiscount').value,
                 downPercent: document.getElementById('downPercent').value,
                 downAmount: document.getElementById('downAmount').value,
-                
-                // Expenses
                 reg: document.getElementById('regFee').value,
                 ins: document.getElementById('insurance').value,
                 red: document.getElementById('redPlate').value,
@@ -655,49 +717,32 @@
 
         function restoreSession() {
             const raw = localStorage.getItem('quotationSession_v1');
-            if(!raw) return;
+            if(!raw) { initGiftInputs(DEFAULT_GIFTS); return; }
             try {
                 const s = JSON.parse(raw);
-                
-                // Basic Info
                 if(s.custName) document.getElementById('custName').value = s.custName;
                 if(s.custTel) document.getElementById('custTel').value = s.custTel;
                 if(s.theme) setTheme(s.theme);
                 if(s.mode) setMode(s.mode);
 
-                // Car Selection Chain
                 if(s.seriesIdx && s.seriesIdx != -1) {
                     document.getElementById('selectSeries').value = s.seriesIdx;
-                    onSeriesChange(); // Trigger sub load
-                    
-                    if(s.subIdx && s.subIdx != -1) {
-                        document.getElementById('selectSubModel').value = s.subIdx;
-                        onSubModelChange();
-                    }
-                    if(s.colorIdx && s.colorIdx != -1) {
-                        document.getElementById('selectColor').value = s.colorIdx;
-                        onColorChange();
-                    }
+                    onSeriesChange(); 
+                    if(s.subIdx && s.subIdx != -1) { document.getElementById('selectSubModel').value = s.subIdx; onSubModelChange(); }
+                    if(s.colorIdx && s.colorIdx != -1) { document.getElementById('selectColor').value = s.colorIdx; onColorChange(); }
                     if(s.campIdx && s.campIdx != -1) {
                         document.getElementById('selectCampaign').value = s.campIdx;
-                        onCampaignSelect(); // Trigger finance load
-                        
-                        if(s.finIdx) { 
-                            document.getElementById('selectFinanceCo').value = s.finIdx;
-                        }
+                        onCampaignSelect(); 
+                        if(s.finIdx) { document.getElementById('selectFinanceCo').value = s.finIdx; }
                     }
                 }
 
-                // Numeric Values
                 if(s.discount) document.getElementById('discount').value = s.discount;
-                if(s.discountCarPrice) document.getElementById('discountCarPrice').value = s.discountCarPrice; // NEW
+                if(s.discountCarPrice) document.getElementById('discountCarPrice').value = s.discountCarPrice; 
                 if(s.intDiscount) document.getElementById('interestDiscount').value = s.intDiscount;
-                
-                // Down Payment
                 if(s.downAmount) document.getElementById('downAmount').value = s.downAmount;
                 if(s.downPercent) document.getElementById('downPercent').value = s.downPercent;
                 
-                // Expenses
                 if(s.reg) document.getElementById('regFee').value = s.reg;
                 if(s.ins) document.getElementById('insurance').value = s.ins;
                 if(s.red) document.getElementById('redPlate').value = s.red;
@@ -705,304 +750,153 @@
                 if(s.vat) document.getElementById('vatFee').value = s.vat;
                 if(s.acc) document.getElementById('accFee').value = s.acc;
                 if(s.book) document.getElementById('bookingDeduct').value = s.book;
-                if(s.gift) document.getElementById('giftList').value = s.gift;
+                
+                const giftToLoad = (s.gift && s.gift.length > 0) ? s.gift : DEFAULT_GIFTS;
+                document.getElementById('giftList').value = giftToLoad;
+                initGiftInputs(giftToLoad);
 
-                // Final Recalculate
-                updateDownPercent(); // Sync % based on Amount
+                updateDownPercent(); 
                 calculateInterestAuto();
                 calculate();
                 updateCustomerInfo();
                 renderGifts();
-
-            } catch(e) {
-                console.error("Session restore failed", e);
-            }
+            } catch(e) { console.error("Session restore failed", e); initGiftInputs(DEFAULT_GIFTS); }
         }
         
         function clearSession() {
-            if(confirm('ล้างข้อมูลที่กรอกค้างไว้ทั้งหมด? (ฐานข้อมูลรถจะไม่หาย)')) {
+            if(confirm('ล้างข้อมูลที่กรอกค้างไว้ทั้งหมด? (ฐานข้อมูลรถจะไม่หาย แต่จะคืนค่าของแถมพื้นฐาน)')) {
                 localStorage.removeItem('quotationSession_v1');
                 location.reload();
             }
         }
+        function resetToDefault() { if(confirm('รีเซ็ตฐานข้อมูลรุ่นรถทั้งหมด? ข้อมูลที่เพิ่มเองจะหายไป')) { localStorage.removeItem('carQuotationData_v11'); initData(); alert("รีเซ็ตเรียบร้อย"); } }
 
-        function resetToDefault() {
-            if(confirm('รีเซ็ตฐานข้อมูลรุ่นรถทั้งหมด? ข้อมูลที่เพิ่มเองจะหายไป')) {
-                localStorage.removeItem('carQuotationData_v11');
-                initData();
-                alert("รีเซ็ตเรียบร้อย");
-            }
+        // --- DYNAMIC GIFT INPUTS (UNCHANGED) ---
+        function initGiftInputs(initialString) {
+            const list = initialString ? initialString.split(',').map(s=>s.trim()).filter(s=>s) : [];
+            const container = document.getElementById('giftInputContainer'); container.innerHTML = '';
+            list.forEach((txt, i) => addGiftRow(i+1, txt));
+            addGiftRow(list.length + 1, '');
+        }
+        function addGiftRow(num, value) {
+            const div = document.createElement('div'); div.className = 'gift-row flex items-center gap-2 fade-in-up';
+            div.innerHTML = `<span class="font-bold text-gray-400 text-sm w-5 text-right">${num}.</span><input type="text" class="input-mobile py-2 text-sm" value="${value}" placeholder="ของแถมรายการที่ ${num}">`;
+            document.getElementById('giftInputContainer').appendChild(div);
+            const input = div.querySelector('input'); input.oninput = function() { handleGiftInput(this); }; input.onblur = function() { cleanGiftRows(this); };
+        }
+        function handleGiftInput(input) {
+            const container = document.getElementById('giftInputContainer'); const rows = container.getElementsByClassName('gift-row');
+            const lastRow = rows[rows.length - 1]; const lastInput = lastRow.querySelector('input');
+            if (input === lastInput && input.value.trim() !== '') { addGiftRow(rows.length + 1, ''); }
+            updateGiftString();
+        }
+        function cleanGiftRows(currentInput) {
+            const container = document.getElementById('giftInputContainer'); const rows = container.getElementsByClassName('gift-row');
+            const lastRow = rows[rows.length - 1]; const lastInput = lastRow.querySelector('input');
+            if (currentInput !== lastInput && currentInput.value.trim() === '') {
+                currentInput.parentNode.classList.add('fade-out');
+                setTimeout(() => { currentInput.parentNode.remove(); reIndexGifts(); updateGiftString(); }, 200);
+            } else { updateGiftString(); }
+        }
+        function reIndexGifts() { document.querySelectorAll('.gift-row').forEach((row, index) => { row.querySelector('span').innerText = (index + 1) + '.'; row.querySelector('input').placeholder = `ของแถมรายการที่ ${index + 1}`; }); }
+        function updateGiftString() {
+            const inputs = document.querySelectorAll('#giftInputContainer input'); const values = [];
+            inputs.forEach(inp => { if(inp.value.trim()) values.push(inp.value.trim()); });
+            document.getElementById('giftList').value = values.join(','); renderGifts();
         }
 
-        // --- THEME LOGIC ---
+        // --- THEME & INTEREST LOGIC (UNCHANGED) ---
         function setTheme(color) {
-            currentThemeColor = color;
-            document.getElementById('customThemeColor').value = color;
+            currentThemeColor = color; document.getElementById('customThemeColor').value = color;
             document.getElementById('card-top-strip').style.background = `linear-gradient(to right, ${color}, #1e293b)`;
             document.getElementById('head-cust-info').style.color = color;
-            const badge = document.getElementById('badge-mode');
-            badge.style.color = color;
-            badge.style.borderColor = color + '40';
-            badge.style.backgroundColor = color + '15';
+            const badge = document.getElementById('badge-mode'); badge.style.color = color; badge.style.borderColor = color + '40'; badge.style.backgroundColor = color + '15';
             document.getElementById('head-schedule').style.borderLeftColor = color;
             saveSession(); 
         }
 
-        // --- INTEREST TAB LOGIC ---
         function renderCampaignsList() {
-            const sIdx = document.getElementById('selectSeriesInterest').value;
-            const list = document.getElementById('campaignList');
-            const panel = document.getElementById('interestConfigPanel');
-            const mgrPanel = document.getElementById('financeManagerPanel');
-            list.innerHTML = '';
-            mgrPanel.classList.add('hidden');
+            const sIdx = document.getElementById('selectSeriesInterest').value; const list = document.getElementById('campaignList'); const panel = document.getElementById('interestConfigPanel'); const mgrPanel = document.getElementById('financeManagerPanel');
+            list.innerHTML = ''; mgrPanel.classList.add('hidden');
             if(sIdx == -1) { panel.classList.add('hidden'); return; }
-            panel.classList.remove('hidden');
-            const series = appData.series[sIdx];
-            if(!series.campaigns) series.campaigns = [];
+            panel.classList.remove('hidden'); const series = appData.series[sIdx]; if(!series.campaigns) series.campaigns = [];
             series.campaigns.forEach((camp, idx) => {
                 const finCount = camp.finances ? camp.finances.length : 0;
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center p-3 bg-white border border-gray-200 rounded shadow-sm";
-                div.innerHTML = `
-                    <div class="flex-1 cursor-pointer" onclick="openFinanceManager(${sIdx}, ${idx})">
-                        <div class="font-bold text-gray-800">${camp.name}</div>
-                        <div class="text-xs text-blue-600"><i class="fa-solid fa-list"></i> ${finCount > 0 ? finCount + " ไฟแนนซ์" : "ใช้เรทมาตรฐาน (General)"}</div>
-                    </div>
-                    <div class="flex gap-2">
-                         <button onclick="openFinanceManager(${sIdx}, ${idx})" class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold">จัดการไฟแนนซ์</button>
-                         <button onclick="deleteCampaign(${sIdx}, ${idx})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button>
-                    </div>`;
+                const div = document.createElement('div'); div.className = "flex justify-between items-center p-3 bg-white border border-gray-200 rounded shadow-sm";
+                div.innerHTML = `<div class="flex-1 cursor-pointer" onclick="openFinanceManager(${sIdx}, ${idx})"><div class="font-bold text-gray-800">${camp.name}</div><div class="text-xs text-blue-600"><i class="fa-solid fa-list"></i> ${finCount > 0 ? finCount + " ไฟแนนซ์" : "ใช้เรทมาตรฐาน (General)"}</div></div><div class="flex gap-2"><button onclick="openFinanceManager(${sIdx}, ${idx})" class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold">จัดการไฟแนนซ์</button><button onclick="deleteCampaign(${sIdx}, ${idx})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button></div>`;
                 list.appendChild(div);
             });
         }
-        function addCampaign() {
-            const sIdx = document.getElementById('selectSeriesInterest').value;
-            const name = document.getElementById('newCampaignName').value.trim();
-            if(sIdx != -1 && name) {
-                appData.series[sIdx].campaigns.push({ name: name, matrix: createDefaultMatrix(), finances: [] });
-                document.getElementById('newCampaignName').value = '';
-                saveData(); renderCampaignsList();
-            }
-        }
-        function deleteCampaign(sIdx, cIdx) {
-            if(confirm('ลบแคมเปญนี้?')) {
-                appData.series[sIdx].campaigns.splice(cIdx, 1);
-                saveData(); renderCampaignsList();
-            }
-        }
-
-        // --- FINANCE MANAGER ---
-        function openFinanceManager(sIdx, cIdx) {
-            editSIdx = sIdx; editCampIdx = cIdx; editFinIdx = -1;
-            const camp = appData.series[sIdx].campaigns[cIdx];
-            if(!camp.finances) camp.finances = [];
-            document.getElementById('financeManagerPanel').classList.remove('hidden');
-            document.getElementById('mgrCampName').innerText = "จัดการ: " + camp.name;
-            document.getElementById('matrixContainer').classList.add('hidden');
-            renderFinanceListItems();
-        }
+        function addCampaign() { const sIdx = document.getElementById('selectSeriesInterest').value; const name = document.getElementById('newCampaignName').value.trim(); if(sIdx != -1 && name) { appData.series[sIdx].campaigns.push({ name: name, matrix: createDefaultMatrix(), finances: [] }); document.getElementById('newCampaignName').value = ''; saveData(); renderCampaignsList(); } }
+        function deleteCampaign(sIdx, cIdx) { if(confirm('ลบแคมเปญนี้?')) { appData.series[sIdx].campaigns.splice(cIdx, 1); saveData(); renderCampaignsList(); } }
+        function openFinanceManager(sIdx, cIdx) { editSIdx = sIdx; editCampIdx = cIdx; editFinIdx = -1; const camp = appData.series[sIdx].campaigns[cIdx]; if(!camp.finances) camp.finances = []; document.getElementById('financeManagerPanel').classList.remove('hidden'); document.getElementById('mgrCampName').innerText = "จัดการ: " + camp.name; document.getElementById('matrixContainer').classList.add('hidden'); renderFinanceListItems(); }
         function closeFinanceManager() { document.getElementById('financeManagerPanel').classList.add('hidden'); editCampIdx = -1; }
         function renderFinanceListItems() {
-            const camp = appData.series[editSIdx].campaigns[editCampIdx];
-            const list = document.getElementById('financeListItems');
-            list.innerHTML = '';
-            const genDiv = document.createElement('div');
-            genDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === -1 ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
-            genDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">มาตรฐาน (General Rate)</span> <span class="text-xs text-gray-400">แก้ไขเรท</span>`;
-            genDiv.onclick = () => loadMatrix(-1);
-            list.appendChild(genDiv);
-            camp.finances.forEach((fin, fIdx) => {
-                const fDiv = document.createElement('div');
-                fDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === fIdx ? 'bg-blue-50 border-blue-400' : 'bg-white'}`;
-                fDiv.innerHTML = `<span class="text-sm text-gray-700">${fin.name}</span> <div class="flex items-center gap-2"><span class="text-xs text-blue-500 underline" onclick="event.stopPropagation(); loadMatrix(${fIdx})">แก้ไขเรท</span><button class="text-red-400 hover:text-red-600" onclick="event.stopPropagation(); deleteFinance(${fIdx})"><i class="fa-solid fa-times"></i></button></div>`;
-                fDiv.onclick = () => loadMatrix(fIdx);
-                list.appendChild(fDiv);
-            });
+            const camp = appData.series[editSIdx].campaigns[editCampIdx]; const list = document.getElementById('financeListItems'); list.innerHTML = '';
+            const genDiv = document.createElement('div'); genDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === -1 ? 'bg-blue-50 border-blue-400' : 'bg-white'}`; genDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">มาตรฐาน (General Rate)</span> <span class="text-xs text-gray-400">แก้ไขเรท</span>`; genDiv.onclick = () => loadMatrix(-1); list.appendChild(genDiv);
+            camp.finances.forEach((fin, fIdx) => { const fDiv = document.createElement('div'); fDiv.className = `flex justify-between items-center p-2 border rounded cursor-pointer ${editFinIdx === fIdx ? 'bg-blue-50 border-blue-400' : 'bg-white'}`; fDiv.innerHTML = `<span class="text-sm text-gray-700">${fin.name}</span> <div class="flex items-center gap-2"><span class="text-xs text-blue-500 underline" onclick="event.stopPropagation(); loadMatrix(${fIdx})">แก้ไขเรท</span><button class="text-red-400 hover:text-red-600" onclick="event.stopPropagation(); deleteFinance(${fIdx})"><i class="fa-solid fa-times"></i></button></div>`; fDiv.onclick = () => loadMatrix(fIdx); list.appendChild(fDiv); });
         }
-        function addFinanceToCamp() {
-            const name = document.getElementById('newFinName').value.trim();
-            if(name && editSIdx!=-1) {
-                appData.series[editSIdx].campaigns[editCampIdx].finances.push({ name: name, matrix: createDefaultMatrix() });
-                document.getElementById('newFinName').value = ''; saveData(); renderFinanceListItems();
-            }
-        }
-        function deleteFinance(fIdx) {
-            if(confirm('ลบไฟแนนซ์นี้?')) {
-                appData.series[editSIdx].campaigns[editCampIdx].finances.splice(fIdx, 1);
-                if(editFinIdx === fIdx) { editFinIdx = -1; document.getElementById('matrixContainer').classList.add('hidden'); }
-                saveData(); renderFinanceListItems();
-            }
-        }
+        function addFinanceToCamp() { const name = document.getElementById('newFinName').value.trim(); if(name && editSIdx!=-1) { appData.series[editSIdx].campaigns[editCampIdx].finances.push({ name: name, matrix: createDefaultMatrix() }); document.getElementById('newFinName').value = ''; saveData(); renderFinanceListItems(); } }
+        function deleteFinance(fIdx) { if(confirm('ลบไฟแนนซ์นี้?')) { appData.series[editSIdx].campaigns[editCampIdx].finances.splice(fIdx, 1); if(editFinIdx === fIdx) { editFinIdx = -1; document.getElementById('matrixContainer').classList.add('hidden'); } saveData(); renderFinanceListItems(); } }
         function loadMatrix(fIdx) {
-            editFinIdx = fIdx; renderFinanceListItems();
-            const camp = appData.series[editSIdx].campaigns[editCampIdx];
-            let targetMatrix = (fIdx === -1) ? camp.matrix : camp.finances[fIdx].matrix;
-            let targetName = (fIdx === -1) ? "General Rate" : camp.finances[fIdx].name;
-            document.getElementById('matrixContainer').classList.remove('hidden');
-            document.getElementById('matrixTitle').innerText = "กำลังแก้ไขเรทของ: " + targetName;
+            editFinIdx = fIdx; renderFinanceListItems(); const camp = appData.series[editSIdx].campaigns[editCampIdx]; let targetMatrix = (fIdx === -1) ? camp.matrix : camp.finances[fIdx].matrix; let targetName = (fIdx === -1) ? "General Rate" : camp.finances[fIdx].name;
+            document.getElementById('matrixContainer').classList.remove('hidden'); document.getElementById('matrixTitle').innerText = "กำลังแก้ไขเรทของ: " + targetName;
             const tbody = document.getElementById('rateMatrixBody'); tbody.innerHTML = '';
-            tiers.forEach(tier => {
-                const tr = document.createElement('tr');
-                let rowHtml = `<td class="row-header">${tier}%</td>`;
-                terms.forEach(term => {
-                    const val = (targetMatrix[tier] && targetMatrix[tier][term]) ? targetMatrix[tier][term] : 0;
-                    rowHtml += `<td><input type="number" step="0.01" class="rate-input" data-tier="${tier}" data-term="${term}" value="${val}"></td>`;
-                });
-                tr.innerHTML = rowHtml; tbody.appendChild(tr);
-            });
+            tiers.forEach(tier => { const tr = document.createElement('tr'); let rowHtml = `<td class="row-header">${tier}%</td>`; terms.forEach(term => { const val = (targetMatrix[tier] && targetMatrix[tier][term]) ? targetMatrix[tier][term] : 0; rowHtml += `<td><input type="number" step="0.01" class="rate-input" data-tier="${tier}" data-term="${term}" value="${val}"></td>`; }); tr.innerHTML = rowHtml; tbody.appendChild(tr); });
         }
-        function saveCurrentMatrix() {
-            const inputs = document.querySelectorAll('.rate-input');
-            let newMatrix = {}; tiers.forEach(t => newMatrix[t] = {});
-            inputs.forEach(input => {
-                const t = input.dataset.tier, tm = input.dataset.term;
-                newMatrix[t][tm] = parseFloat(input.value) || 0;
-            });
-            if (editFinIdx === -1) appData.series[editSIdx].campaigns[editCampIdx].matrix = newMatrix;
-            else appData.series[editSIdx].campaigns[editCampIdx].finances[editFinIdx].matrix = newMatrix;
-            saveData(); alert("บันทึกตารางดอกเบี้ยเรียบร้อย");
-        }
+        function saveCurrentMatrix() { const inputs = document.querySelectorAll('.rate-input'); let newMatrix = {}; tiers.forEach(t => newMatrix[t] = {}); inputs.forEach(input => { const t = input.dataset.tier, tm = input.dataset.term; newMatrix[t][tm] = parseFloat(input.value) || 0; }); if (editFinIdx === -1) appData.series[editSIdx].campaigns[editCampIdx].matrix = newMatrix; else appData.series[editSIdx].campaigns[editCampIdx].finances[editFinIdx].matrix = newMatrix; saveData(); alert("บันทึกตารางดอกเบี้ยเรียบร้อย"); }
 
-        // --- SETTINGS SERIES/COLOR ---
+        // --- SETTINGS SERIES ---
         function renderSeriesList() {
-            const list = document.getElementById('seriesList');
-            const selectInterest = document.getElementById('selectSeriesInterest');
-            const currentSel = selectInterest.value;
+            const list = document.getElementById('seriesList'); const selectInterest = document.getElementById('selectSeriesInterest'); const currentSel = selectInterest.value;
             list.innerHTML = ''; selectInterest.innerHTML = '<option value="-1">-- เลือกรุ่นรถ --</option>';
             appData.series.forEach((s, index) => {
-                const div = document.createElement('div');
-                div.className = 'list-item flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:border-blue-400';
-                div.onclick = (e) => { if(e.target.closest('.delete-btn')) return; editSeries(index); };
+                const div = document.createElement('div'); div.className = 'list-item flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:border-blue-400'; div.onclick = (e) => { if(e.target.closest('.delete-btn')) return; editSeries(index); };
                 div.innerHTML = `<div class="flex items-center gap-2"><i class="fa-solid fa-folder text-blue-500"></i><div><div class="font-bold text-gray-800">${s.name}</div><div class="text-xs text-gray-500">${s.subModels.length} รุ่น, ${s.campaigns ? s.campaigns.length : 0} แคมเปญ</div></div></div><button class="delete-btn text-red-400 hover:text-red-600 p-2" onclick="deleteSeries(${index})"><i class="fa-solid fa-trash"></i></button>`;
-                list.appendChild(div);
-                const opt = document.createElement('option'); opt.value = index; opt.text = s.name; selectInterest.appendChild(opt);
+                list.appendChild(div); const opt = document.createElement('option'); opt.value = index; opt.text = s.name; selectInterest.appendChild(opt);
             });
             selectInterest.value = currentSel;
         }
-        function addSeries() {
-            const name = document.getElementById('newSeriesName').value.trim();
-            if(name) { appData.series.push({ id: Date.now(), name: name, subModels: [], colors: [], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) }); document.getElementById('newSeriesName').value = ''; saveData(); }
-        }
+        function addSeries() { const name = document.getElementById('newSeriesName').value.trim(); if(name) { appData.series.push({ id: Date.now(), name: name, subModels: [], colors: [], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) }); document.getElementById('newSeriesName').value = ''; saveData(); } }
         function deleteSeries(index) { if(confirm('ลบข้อมูลนี้?')) { appData.series.splice(index, 1); if(editSIdx === index) closeSeriesDetail(); saveData(); } }
-        function editSeries(index) {
-            editSIdx = index;
-            document.getElementById('seriesDetailPanel').classList.remove('hidden');
-            document.getElementById('editingSeriesName').innerText = "จัดการ: " + appData.series[index].name;
-            renderDetailLists(); document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' });
-        }
+        function editSeries(index) { editSIdx = index; document.getElementById('seriesDetailPanel').classList.remove('hidden'); document.getElementById('editingSeriesName').innerText = "จัดการ: " + appData.series[index].name; renderDetailLists(); document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' }); }
         function closeSeriesDetail() { editSIdx = -1; document.getElementById('seriesDetailPanel').classList.add('hidden'); }
-        function renderDetailLists() {
-            if(editSIdx === -1) return;
-            const series = appData.series[editSIdx];
-            const subList = document.getElementById('subModelList'); subList.innerHTML = '';
-            series.subModels.forEach((sub, idx) => { subList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${sub.name} <span class="text-gray-400">(${fmt(sub.price)})</span></span><button onclick="deleteSubModel(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; });
-            const colorList = document.getElementById('colorList'); colorList.innerHTML = '';
-            series.colors.forEach((col, idx) => { colorList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${col.name} <span class="text-blue-500 text-xs">+${fmt(col.price)}</span></span><button onclick="deleteColor(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; });
-        }
-        function addSubModel() {
-            if(editSIdx === -1) return;
-            const name = document.getElementById('newSubName').value.trim();
-            const price = parseFloat(document.getElementById('newSubPrice').value);
-            if(name && !isNaN(price)) { appData.series[editSIdx].subModels.push({ name, price }); document.getElementById('newSubName').value = ''; document.getElementById('newSubPrice').value = ''; saveData(); }
-        }
+        function renderDetailLists() { if(editSIdx === -1) return; const series = appData.series[editSIdx]; const subList = document.getElementById('subModelList'); subList.innerHTML = ''; series.subModels.forEach((sub, idx) => { subList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${sub.name} <span class="text-gray-400">(${fmt(sub.price)})</span></span><button onclick="deleteSubModel(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; }); const colorList = document.getElementById('colorList'); colorList.innerHTML = ''; series.colors.forEach((col, idx) => { colorList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${col.name} <span class="text-blue-500 text-xs">+${fmt(col.price)}</span></span><button onclick="deleteColor(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; }); }
+        function addSubModel() { if(editSIdx === -1) return; const name = document.getElementById('newSubName').value.trim(); const price = parseFloat(document.getElementById('newSubPrice').value); if(name && !isNaN(price)) { appData.series[editSIdx].subModels.push({ name, price }); document.getElementById('newSubName').value = ''; document.getElementById('newSubPrice').value = ''; saveData(); } }
         function deleteSubModel(idx) { appData.series[editSIdx].subModels.splice(idx, 1); saveData(); }
-        function addColor() {
-            if(editSIdx === -1) return;
-            const name = document.getElementById('newColorName').value.trim();
-            const price = parseFloat(document.getElementById('newColorPrice').value) || 0;
-            if(name) { appData.series[editSIdx].colors.push({ name, price }); document.getElementById('newColorName').value = ''; document.getElementById('newColorPrice').value = ''; saveData(); }
-        }
+        function addColor() { if(editSIdx === -1) return; const name = document.getElementById('newColorName').value.trim(); const price = parseFloat(document.getElementById('newColorPrice').value) || 0; if(name) { appData.series[editSIdx].colors.push({ name, price }); document.getElementById('newColorName').value = ''; document.getElementById('newColorPrice').value = ''; saveData(); } }
         function deleteColor(idx) { appData.series[editSIdx].colors.splice(idx, 1); saveData(); }
 
         // --- EDITOR LOGIC ---
-        function populateSeriesDropdown() {
-            const sSelect = document.getElementById('selectSeries');
-            const currentVal = sSelect.value;
-            sSelect.innerHTML = '<option value="-1">-- เลือกรุ่นหลัก --</option>';
-            appData.series.forEach((s, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = s.name; sSelect.appendChild(opt); });
-            if(currentVal != -1 && currentVal < appData.series.length) sSelect.value = currentVal;
-        }
+        function populateSeriesDropdown() { const sSelect = document.getElementById('selectSeries'); const currentVal = sSelect.value; sSelect.innerHTML = '<option value="-1">-- เลือกรุ่นหลัก --</option>'; appData.series.forEach((s, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = s.name; sSelect.appendChild(opt); }); if(currentVal != -1 && currentVal < appData.series.length) sSelect.value = currentVal; }
         
         function onSeriesChange() {
-            const seriesIdx = document.getElementById('selectSeries').value;
-            const subSelect = document.getElementById('selectSubModel');
-            const colSelect = document.getElementById('selectColor');
-            const campSelect = document.getElementById('selectCampaign');
-            subSelect.innerHTML = '<option value="-1">-- เลือกรุ่นย่อย --</option>';
-            colSelect.innerHTML = '<option value="-1">-- เลือกสี --</option>';
-            campSelect.innerHTML = '<option value="-1">-- เลือกแคมเปญ --</option>';
+            const seriesIdx = document.getElementById('selectSeries').value; const subSelect = document.getElementById('selectSubModel'); const colSelect = document.getElementById('selectColor'); const campSelect = document.getElementById('selectCampaign');
+            subSelect.innerHTML = '<option value="-1">-- เลือกรุ่นย่อย --</option>'; colSelect.innerHTML = '<option value="-1">-- เลือกสี --</option>'; campSelect.innerHTML = '<option value="-1">-- เลือกแคมเปญ --</option>';
             document.getElementById('carPrice').value = 0; document.getElementById('colorPrice').value = 0;
             if(seriesIdx != -1) {
-                subSelect.disabled = false; colSelect.disabled = false; campSelect.disabled = false;
-                const series = appData.series[seriesIdx];
+                subSelect.disabled = false; colSelect.disabled = false; campSelect.disabled = false; const series = appData.series[seriesIdx];
                 series.subModels.forEach((sub, idx) => { subSelect.innerHTML += `<option value="${idx}">${sub.name} (${fmt(sub.price)})</option>`; });
                 series.colors.forEach((col, idx) => { colSelect.innerHTML += `<option value="${idx}">${col.name} ${col.price>0?'+'+fmt(col.price):''}</option>`; });
-                if(series.campaigns) {
-                    series.campaigns.forEach((camp, idx) => { campSelect.innerHTML += `<option value="${idx}">${camp.name}</option>`; });
-                }
+                if(series.campaigns) { series.campaigns.forEach((camp, idx) => { campSelect.innerHTML += `<option value="${idx}">${camp.name}</option>`; }); }
             } else { subSelect.disabled = true; colSelect.disabled = true; campSelect.disabled = true; }
-            onCampaignSelect();
-            saveSession(); 
+            onCampaignSelect(); saveSession(); 
         }
-
-        function onSubModelChange() {
-            const sIdx = document.getElementById('selectSeries').value; const subIdx = document.getElementById('selectSubModel').value;
-            document.getElementById('carPrice').value = (sIdx!=-1 && subIdx!=-1) ? appData.series[sIdx].subModels[subIdx].price : 0;
-            calculate();
-        }
-        function onColorChange() {
-            const sIdx = document.getElementById('selectSeries').value; const cIdx = document.getElementById('selectColor').value;
-            document.getElementById('colorPrice').value = (sIdx!=-1 && cIdx!=-1) ? appData.series[sIdx].colors[cIdx].price : 0;
-            calculate();
-        }
+        function onSubModelChange() { const sIdx = document.getElementById('selectSeries').value; const subIdx = document.getElementById('selectSubModel').value; document.getElementById('carPrice').value = (sIdx!=-1 && subIdx!=-1) ? appData.series[sIdx].subModels[subIdx].price : 0; calculate(); }
+        function onColorChange() { const sIdx = document.getElementById('selectSeries').value; const cIdx = document.getElementById('selectColor').value; document.getElementById('colorPrice').value = (sIdx!=-1 && cIdx!=-1) ? appData.series[sIdx].colors[cIdx].price : 0; calculate(); }
         function onCampaignSelect() {
-            const sIdx = document.getElementById('selectSeries').value;
-            const campIdx = document.getElementById('selectCampaign').value;
-            const finContainer = document.getElementById('financeSelectorContainer');
-            const finSelect = document.getElementById('selectFinanceCo');
-            finSelect.innerHTML = '';
-            finContainer.classList.add('hidden');
-            if(sIdx != -1 && campIdx != -1) {
-                const camp = appData.series[sIdx].campaigns[campIdx];
-                if(camp.finances && camp.finances.length > 0) {
-                    finContainer.classList.remove('hidden');
-                    camp.finances.forEach((f, idx) => { finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`; });
-                }
-            }
+            const sIdx = document.getElementById('selectSeries').value; const campIdx = document.getElementById('selectCampaign').value; const finContainer = document.getElementById('financeSelectorContainer'); const finSelect = document.getElementById('selectFinanceCo');
+            finSelect.innerHTML = ''; finContainer.classList.add('hidden');
+            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; if(camp.finances && camp.finances.length > 0) { finContainer.classList.remove('hidden'); camp.finances.forEach((f, idx) => { finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`; }); } }
             calculateInterestAuto();
         }
 
         // --- CALCULATION ---
-        function getInterestRate(matrix, downPct, term) {
-            let selectedTier = 0;
-            const sortedTiers = tiers.slice().sort((a,b)=>a-b);
-            for(let t of sortedTiers) { if(downPct >= t) selectedTier = t; }
-            if(matrix[selectedTier] && matrix[selectedTier][term]) return matrix[selectedTier][term];
-            return 0;
-        }
-
+        function getInterestRate(matrix, downPct, term) { let selectedTier = 0; const sortedTiers = tiers.slice().sort((a,b)=>a-b); for(let t of sortedTiers) { if(downPct >= t) selectedTier = t; } if(matrix[selectedTier] && matrix[selectedTier][term]) return matrix[selectedTier][term]; return 0; }
         function calculateInterestAuto() {
-            const sIdx = document.getElementById('selectSeries').value;
-            const campIdx = document.getElementById('selectCampaign').value;
-            const downPct = parseFloat(document.getElementById('downPercent').value) || 0;
-            const discount = parseFloat(document.getElementById('interestDiscount').value) || 0;
-            
-            const finContainer = document.getElementById('financeSelectorContainer');
-            let useFinance = !finContainer.classList.contains('hidden');
-            let finIdx = document.getElementById('selectFinanceCo').value;
-
-            if(sIdx != -1 && campIdx != -1) {
-                const camp = appData.series[sIdx].campaigns[campIdx];
-                let activeMatrix = camp.matrix;
-                if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix;
-                if(activeMatrix) {
-                    [48, 60, 72, 84].forEach(t => {
-                        const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount);
-                        document.getElementById('rate'+t).value = r.toFixed(2);
-                    });
-                }
-            }
+            const sIdx = document.getElementById('selectSeries').value; const campIdx = document.getElementById('selectCampaign').value; const downPct = parseFloat(document.getElementById('downPercent').value) || 0; const discount = parseFloat(document.getElementById('interestDiscount').value) || 0; 
+            const finContainer = document.getElementById('financeSelectorContainer'); let useFinance = !finContainer.classList.contains('hidden'); let finIdx = document.getElementById('selectFinanceCo').value;
+            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; let activeMatrix = camp.matrix; if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix; if(activeMatrix) { [48, 60, 72, 84].forEach(t => { const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount); document.getElementById('rate'+t).value = r.toFixed(2); }); } }
             calculate(false);
         }
 
@@ -1011,186 +905,66 @@
         document.getElementById('currentDate').innerText = new Date().toLocaleDateString('th-TH', dateOptions);
         const fmt = (num) => parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-        function updateCustomerInfo() {
-            document.getElementById('dispCustName').innerText = document.getElementById('custName').value || "ชื่อลูกค้า";
-            document.getElementById('dispCustTel').innerText = "Tel: " + (document.getElementById('custTel').value || "...");
-            saveSession();
-        }
+        function updateCustomerInfo() { document.getElementById('dispCustName').innerText = document.getElementById('custName').value || "ชื่อลูกค้า"; document.getElementById('dispCustTel').innerText = "Tel: " + (document.getElementById('custTel').value || "..."); saveSession(); }
         function setMode(mode) {
-            currentMode = mode;
-            const btnF = document.getElementById('btn-mode-finance'); const btnC = document.getElementById('btn-mode-cash');
-            const sectionFinance = document.getElementById('finance-section');
-            if(mode === 'finance') {
-                btnF.classList.add('active'); btnF.classList.remove('inactive'); btnC.classList.remove('active'); btnC.classList.add('inactive');
-                sectionFinance.classList.remove('hidden');
-                document.getElementById('lbl-discount-type').innerText = "(ส่วนลดเงินดาวน์)";
-            } else {
-                btnC.classList.add('active'); btnC.classList.remove('inactive'); btnF.classList.remove('active'); btnF.classList.add('inactive');
-                sectionFinance.classList.add('hidden');
-                document.getElementById('lbl-discount-type').innerText = "(ส่วนลดราคารถ)";
-            }
-            calculate();
-            saveSession();
+            currentMode = mode; const btnF = document.getElementById('btn-mode-finance'); const btnC = document.getElementById('btn-mode-cash'); const sectionFinance = document.getElementById('finance-section');
+            if(mode === 'finance') { btnF.classList.add('active'); btnF.classList.remove('inactive'); btnC.classList.remove('active'); btnC.classList.add('inactive'); sectionFinance.classList.remove('hidden'); document.getElementById('lbl-discount-type').innerText = "(ส่วนลดเงินดาวน์)"; } else { btnC.classList.add('active'); btnC.classList.remove('inactive'); btnF.classList.remove('active'); btnF.classList.add('inactive'); sectionFinance.classList.add('hidden'); document.getElementById('lbl-discount-type').innerText = "(ส่วนลดราคารถ)"; }
+            calculate(); saveSession();
         }
 
-        // --- NEW LOGIC for Down Payment (Fix for V11.9.2) ---
         function updateDownAmount() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0;
-            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; // Get Discount Car
-            const pct = parseFloat(document.getElementById('downPercent').value) || 0;
-            
-            // FORMULA: (Price + Color - DiscountCar) * %
-            // Use Math.max(0, ...) to prevent negative base price
-            const basePrice = Math.max(0, (price + color) - discountCar);
-            document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
-            
-            calculateInterestAuto();
+            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const pct = parseFloat(document.getElementById('downPercent').value) || 0; const basePrice = Math.max(0, (price + color) - discountCar);
+            document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0); calculateInterestAuto();
         }
-
         function updateDownPercent() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0;
-            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; // Get Discount Car
-            const amt = parseFloat(document.getElementById('downAmount').value) || 0;
-            
-            const basePrice = Math.max(0, (price + color) - discountCar);
-            
-            if(basePrice > 0) {
-                 const newPct = (amt / basePrice * 100);
-                 const currentVal = parseFloat(document.getElementById('downPercent').value) || 0;
-                 if(Math.abs(newPct - currentVal) > 0.01) {
-                     document.getElementById('downPercent').value = newPct.toFixed(2);
-                 }
-            }
+            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const amt = parseFloat(document.getElementById('downAmount').value) || 0; const basePrice = Math.max(0, (price + color) - discountCar);
+            if(basePrice > 0) { const newPct = (amt / basePrice * 100); const currentVal = parseFloat(document.getElementById('downPercent').value) || 0; if(Math.abs(newPct - currentVal) > 0.01) { document.getElementById('downPercent').value = newPct.toFixed(2); } }
             calculateInterestAuto();
         }
 
         function updateFullModelName() {
-            const sIdx = document.getElementById('selectSeries').value;
-            const subIdx = document.getElementById('selectSubModel').value;
-            const cIdx = document.getElementById('selectColor').value;
-            let text = "เลือกรุ่นรถ";
-            if(sIdx != -1 && subIdx != -1) {
-                text = `${appData.series[sIdx].name} ${appData.series[sIdx].subModels[subIdx].name}`;
-                if(cIdx != -1) text += ` (${appData.series[sIdx].colors[cIdx].name})`;
-            }
+            const sIdx = document.getElementById('selectSeries').value; const subIdx = document.getElementById('selectSubModel').value; const cIdx = document.getElementById('selectColor').value; let text = "เลือกรุ่นรถ";
+            if(sIdx != -1 && subIdx != -1) { text = `${appData.series[sIdx].name} ${appData.series[sIdx].subModels[subIdx].name}`; if(cIdx != -1) text += ` (${appData.series[sIdx].colors[cIdx].name})`; }
             document.getElementById('dispModelFull').innerText = text;
         }
 
         function calculate(recalcDown = true) {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0;
-            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const totalCarPrice = price + color;
-            
-            const discount = parseFloat(document.getElementById('discount').value) || 0;
-            const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const totalCarPrice = price + color;
+            const discount = parseFloat(document.getElementById('discount').value) || 0; const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const reg = parseFloat(document.getElementById('regFee').value) || 0; const ins = parseFloat(document.getElementById('insurance').value) || 0; const red = parseFloat(document.getElementById('redPlate').value) || 0; const book = parseFloat(document.getElementById('bookingDeduct').value) || 0; const adv = parseFloat(document.getElementById('advInstallment').value) || 0; const vat = parseFloat(document.getElementById('vatFee').value) || 0; const acc = parseFloat(document.getElementById('accFee').value) || 0;
 
-            const reg = parseFloat(document.getElementById('regFee').value) || 0;
-            const ins = parseFloat(document.getElementById('insurance').value) || 0;
-            const red = parseFloat(document.getElementById('redPlate').value) || 0;
-            const book = parseFloat(document.getElementById('bookingDeduct').value) || 0;
-            const adv = parseFloat(document.getElementById('advInstallment').value) || 0;
-            const vat = parseFloat(document.getElementById('vatFee').value) || 0;
-            const acc = parseFloat(document.getElementById('accFee').value) || 0;
-
-            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice);
-            document.getElementById('sumReg').innerText = fmt(reg);
-            document.getElementById('sumInsure').innerText = fmt(ins);
-            document.getElementById('sumRedPlate').innerText = fmt(red);
-            document.getElementById('sumAdvInst').innerText = fmt(adv);
-             document.getElementById('sumVat').innerText = fmt(vat);
-            document.getElementById('sumAcc').innerText = fmt(acc);
-            document.getElementById('sumBooking').innerText = "- " + fmt(book);
-            document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
+            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice); document.getElementById('sumReg').innerText = fmt(reg); document.getElementById('sumInsure').innerText = fmt(ins); document.getElementById('sumRedPlate').innerText = fmt(red); document.getElementById('sumAdvInst').innerText = fmt(adv); document.getElementById('sumVat').innerText = fmt(vat); document.getElementById('sumAcc').innerText = fmt(acc); document.getElementById('sumBooking').innerText = "- " + fmt(book); document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
             const badge = document.getElementById('badge-mode');
             if (currentMode === 'finance') {
-                document.getElementById('preview-finance-table').classList.remove('hidden');
-                document.getElementById('row-finance-amount').classList.remove('hidden'); 
-                
-                badge.innerText = "FINANCE";
-                document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์";
-                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
-                
-                if(recalcDown) {
-                    const pct = parseFloat(document.getElementById('downPercent').value) || 0;
-                    // FIX: Re-calculate down amount based on (Total - DiscountCar)
-                    const basePrice = Math.max(0, totalCarPrice - discountCarPrice);
-                    document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
-                }
-                const downAmt = parseFloat(document.getElementById('downAmount').value) || 0;
-                
-                // --- Logic: Finance Amount ---
-                const priceAfterDiscount = totalCarPrice - discountCarPrice;
-                const financeAmt = priceAfterDiscount - downAmt;
+                document.getElementById('preview-finance-table').classList.remove('hidden'); document.getElementById('row-finance-amount').classList.remove('hidden'); 
+                badge.innerText = "FINANCE"; document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์"; document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
+                if(recalcDown) { const pct = parseFloat(document.getElementById('downPercent').value) || 0; const basePrice = Math.max(0, totalCarPrice - discountCarPrice); document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0); }
+                const downAmt = parseFloat(document.getElementById('downAmount').value) || 0; const priceAfterDiscount = totalCarPrice - discountCarPrice; const financeAmt = priceAfterDiscount - downAmt;
 
-                // 1. Show Discount Row
-                if(discountCarPrice > 0) {
-                    document.getElementById('row-car-discount').classList.remove('hidden');
-                    document.getElementById('dispCarDiscount').innerText = "-" + fmt(discountCarPrice);
-                    
-                    // 2. Show Price After Discount Row
-                    document.getElementById('row-price-after-discount').classList.remove('hidden');
-                    document.getElementById('dispPriceAfterDiscount').innerText = fmt(priceAfterDiscount);
-                } else {
-                    document.getElementById('row-car-discount').classList.add('hidden');
-                    document.getElementById('row-price-after-discount').classList.add('hidden');
-                }
-
-                // 3. Show Deduct Down Payment Row
-                document.getElementById('row-down-deduct').classList.remove('hidden');
-                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
-                document.getElementById('dispDownDeduct').innerText = "-" + fmt(downAmt);
-
-                // 4. Show Finance Amount
-                document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
+                if(discountCarPrice > 0) { document.getElementById('row-car-discount').classList.remove('hidden'); document.getElementById('dispCarDiscount').innerText = "-" + fmt(discountCarPrice); document.getElementById('row-price-after-discount').classList.remove('hidden'); document.getElementById('dispPriceAfterDiscount').innerText = fmt(priceAfterDiscount); } else { document.getElementById('row-car-discount').classList.add('hidden'); document.getElementById('row-price-after-discount').classList.add('hidden'); }
+                document.getElementById('row-down-deduct').classList.remove('hidden'); document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2); document.getElementById('dispDownDeduct').innerText = "-" + fmt(downAmt); document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt); document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
                 
-                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
-                
-                [48, 60, 72, 84].forEach(term => {
-                    const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
-                    document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
-                    
-                    // Interest based on Finance Amount
-                    const interestTotal = financeAmt * (rate/100) * (term/12);
-                    const monthly = (financeAmt + interestTotal) / term;
-                    document.getElementById('inst'+term).innerText = fmt(monthly);
-                });
-
-                document.getElementById('sumDown').innerText = fmt(downAmt);
-                // Grand Total = Down + Expenses - Booking - DownDiscount
-                const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
-                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+                [48, 60, 72, 84].forEach(term => { const rate = parseFloat(document.getElementById('rate'+term).value) || 0; document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%'; const interestTotal = financeAmt * (rate/100) * (term/12); const monthly = (financeAmt + interestTotal) / term; document.getElementById('inst'+term).innerText = fmt(monthly); });
+                document.getElementById('sumDown').innerText = fmt(downAmt); const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount; document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             } else {
-                document.getElementById('preview-finance-table').classList.add('hidden');
-                // Hide Finance Specific Rows
-                document.getElementById('row-finance-amount').classList.add('hidden'); 
-                document.getElementById('row-car-discount').classList.add('hidden'); 
-                document.getElementById('row-price-after-discount').classList.add('hidden');
-                document.getElementById('row-down-deduct').classList.add('hidden');
-                
-                badge.innerText = "CASH";
-                document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
-                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
-                document.getElementById('sumDown').innerText = fmt(totalCarPrice);
-                // Cash Mode uses main 'discount' field as Car Discount
-                const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount;
-                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+                document.getElementById('preview-finance-table').classList.add('hidden'); document.getElementById('row-finance-amount').classList.add('hidden');  document.getElementById('row-car-discount').classList.add('hidden');  document.getElementById('row-price-after-discount').classList.add('hidden'); document.getElementById('row-down-deduct').classList.add('hidden');
+                badge.innerText = "CASH"; document.getElementById('lbl-pickup-main').innerText = "ราคารถ"; document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ"; document.getElementById('sumDown').innerText = fmt(totalCarPrice);
+                const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount; document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             }
             saveSession(); 
         }
 
         function renderGifts() {
-            const raw = document.getElementById('giftList').value;
-            const items = raw.split(',').map(s => s.trim()).filter(s => s);
-            const list = document.getElementById('displayGiftList');
-            list.innerHTML = ''; items.forEach(i => { list.innerHTML += `<li>${i}</li>`; });
+            const raw = document.getElementById('giftList').value; const items = raw.split(',').map(s => s.trim()).filter(s => s);
+            const list = document.getElementById('displayGiftList'); list.innerHTML = ''; items.forEach((i, idx) => { list.innerHTML += `<li>${i}</li>`; });
             saveSession();
         }
 
         function switchTab(tabName) {
-            ['settings','interest','editor','preview'].forEach(t => { 
+            ['settings','interest','editor','preview','history'].forEach(t => { 
                 document.getElementById('view-'+t).classList.add('hidden'); 
                 document.getElementById('tab-'+t).classList.remove('active'); 
             });
@@ -1198,7 +972,7 @@
             document.getElementById('tab-'+tabName).classList.add('active');
             const btnBack=document.getElementById('btn-back-edit'), btnGo=document.getElementById('btn-go-preview'), btnSave=document.getElementById('btn-save-img');
             if(tabName==='editor') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.remove('hidden'); }
-            else if(tabName==='settings' || tabName==='interest') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.add('hidden'); }
+            else if(tabName==='settings' || tabName==='interest' || tabName==='history') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.add('hidden'); }
             else { 
                 updateFullModelName(); calculate(); renderGifts(); updateCustomerInfo(); 
                 btnBack.classList.remove('hidden'); btnSave.classList.remove('hidden'); btnGo.classList.add('hidden'); 
