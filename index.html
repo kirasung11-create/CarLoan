@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - V11.9 (Full Breakdown)</title>
+    <title>Honda Quotation - V11.9.2 (Net Down Base)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -64,7 +64,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.11.9) แสดงรายละเอียดการคำนวณยอดจัดไฟแนนซ์ครบถ้วน
+                <i class="fa-solid fa-circle-info"></i> (V.11.9.2) คำนวณ % ดาวน์จากยอดหลังหักส่วนลดแล้ว
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -261,7 +261,7 @@
 
                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-3">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs text-gray-500">เงินดาวน์ (%)</label>
+                        <label class="text-xs text-gray-500">เงินดาวน์ (%) <span class="text-[10px] text-gray-400 font-light">จากยอดหลังหักส่วนลดรถ</span></label>
                         <input type="number" id="downPercent" class="bg-white border rounded px-2 py-1 w-16 text-center text-sm font-bold text-blue-600" value="25" oninput="updateDownAmount()">
                     </div>
                     <div class="relative">
@@ -1032,21 +1032,40 @@
             calculate();
             saveSession();
         }
+
+        // --- NEW LOGIC for Down Payment (Fix for V11.9.2) ---
         function updateDownAmount() {
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; // Get Discount Car
             const pct = parseFloat(document.getElementById('downPercent').value) || 0;
-            // Down calculation is usually on Full Price
-            document.getElementById('downAmount').value = ((price + color) * pct / 100).toFixed(0);
+            
+            // FORMULA: (Price + Color - DiscountCar) * %
+            // Use Math.max(0, ...) to prevent negative base price
+            const basePrice = Math.max(0, (price + color) - discountCar);
+            document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
+            
             calculateInterestAuto();
         }
+
         function updateDownPercent() {
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; // Get Discount Car
             const amt = parseFloat(document.getElementById('downAmount').value) || 0;
-            if(price+color > 0) document.getElementById('downPercent').value = (amt / (price+color) * 100).toFixed(2);
+            
+            const basePrice = Math.max(0, (price + color) - discountCar);
+            
+            if(basePrice > 0) {
+                 const newPct = (amt / basePrice * 100);
+                 const currentVal = parseFloat(document.getElementById('downPercent').value) || 0;
+                 if(Math.abs(newPct - currentVal) > 0.01) {
+                     document.getElementById('downPercent').value = newPct.toFixed(2);
+                 }
+            }
             calculateInterestAuto();
         }
+
         function updateFullModelName() {
             const sIdx = document.getElementById('selectSeries').value;
             const subIdx = document.getElementById('selectSubModel').value;
@@ -1096,11 +1115,13 @@
                 
                 if(recalcDown) {
                     const pct = parseFloat(document.getElementById('downPercent').value) || 0;
-                    document.getElementById('downAmount').value = (totalCarPrice * pct / 100).toFixed(0);
+                    // FIX: Re-calculate down amount based on (Total - DiscountCar)
+                    const basePrice = Math.max(0, totalCarPrice - discountCarPrice);
+                    document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
                 }
                 const downAmt = parseFloat(document.getElementById('downAmount').value) || 0;
                 
-                // --- UPDATE LOGIC V11.9 ---
+                // --- Logic: Finance Amount ---
                 const priceAfterDiscount = totalCarPrice - discountCarPrice;
                 const financeAmt = priceAfterDiscount - downAmt;
 
@@ -1119,13 +1140,13 @@
 
                 // 3. Show Deduct Down Payment Row
                 document.getElementById('row-down-deduct').classList.remove('hidden');
-                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
                 document.getElementById('dispDownDeduct').innerText = "-" + fmt(downAmt);
 
                 // 4. Show Finance Amount
                 document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
                 
-                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
                 
                 [48, 60, 72, 84].forEach(term => {
                     const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
