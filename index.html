@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - Clean Preview (V11.6)</title>
+    <title>Honda Quotation - V11.9 (Full Breakdown)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -64,7 +64,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.11.6 Clean) ตัดชื่อแคมเปญ/ไฟแนนซ์ออกจากใบเสนอราคาแล้ว
+                <i class="fa-solid fa-circle-info"></i> (V.11.9) แสดงรายละเอียดการคำนวณยอดจัดไฟแนนซ์ครบถ้วน
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -234,6 +234,11 @@
             <div id="finance-section" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition-all duration-300">
                 <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-coins text-yellow-500"></i> คำนวณเงินดาวน์</h3>
                 
+                <div class="mb-3 bg-red-50 p-2 rounded border border-red-100">
+                    <label class="text-xs text-red-500 ml-1 font-bold">ส่วนลดราคารถ (ลดยอดจัดไฟแนนซ์)</label>
+                    <input type="number" id="discountCarPrice" class="input-mobile text-red-600 border-red-200" placeholder="0" oninput="calculate()">
+                </div>
+
                 <div class="mb-3">
                     <label class="text-xs text-gray-500 ml-1 font-bold text-green-600"><i class="fa-solid fa-tag"></i> เลือกแคมเปญดอกเบี้ย</label>
                     <select id="selectCampaign" class="input-mobile bg-green-50 text-green-800 font-medium" onchange="onCampaignSelect()" disabled>
@@ -285,7 +290,7 @@
                     <div><label class="text-xs text-gray-500 ml-1">ค่าเบี้ยประกัน</label><input type="number" id="insurance" class="input-mobile" value="0" oninput="calculate()"></div>
                     <div><label class="text-xs text-gray-500 ml-1">มัดจำป้ายแดง</label><input type="number" id="redPlate" class="input-mobile" value="0" oninput="calculate()"></div>
                     <div><label class="text-xs text-gray-500 ml-1">งวดแรก (ถ้าจ่าย)</label><input type="number" id="advInstallment" class="input-mobile text-blue-600" placeholder="0" oninput="calculate()"></div>
-                     <div><label class="text-xs text-gray-500 ml-1">ค่า VAT 7%</label><input type="number" id="vatFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
+                      <div><label class="text-xs text-gray-500 ml-1">ค่า VAT 7%</label><input type="number" id="vatFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
                     <div><label class="text-xs text-gray-500 ml-1">อุปกรณ์เพิ่มเติม</label><input type="number" id="accFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
                 </div>
                 <hr class="my-3 border-gray-100">
@@ -315,9 +320,31 @@
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
                         <p class="text-xs text-gray-500 mb-1">รุ่นรถยนต์</p>
                         <h1 class="text-xl font-bold text-gray-900 leading-tight" id="dispModelFull">เลือกรุ่นรถ</h1>
-                        <div class="mt-2 flex justify-between items-end border-t pt-2 border-gray-200">
-                            <span class="text-xs text-gray-500">ราคารถรวมสี</span>
-                            <span class="text-xl font-bold text-gray-800" id="dispNetPrice">0</span>
+                        <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                            <div class="flex justify-between items-end">
+                                <span class="text-xs text-gray-500">ราคารถรวมสี</span>
+                                <span class="text-xl font-bold text-gray-800" id="dispNetPrice">0</span>
+                            </div>
+                            
+                             <div id="row-car-discount" class="flex justify-between items-end text-red-600 hidden">
+                                <span class="text-xs">หัก ส่วนลดราคารถ</span>
+                                <span class="text-lg font-bold" id="dispCarDiscount">0</span>
+                            </div>
+
+                            <div id="row-price-after-discount" class="flex justify-between items-end text-gray-800 border-t border-dashed border-gray-300 pt-1 mt-1 hidden">
+                                <span class="text-xs font-semibold">ราคาสุทธิหลังหักส่วนลด</span>
+                                <span class="text-lg font-bold" id="dispPriceAfterDiscount">0</span>
+                            </div>
+
+                            <div id="row-down-deduct" class="flex justify-between items-end text-green-600 hidden">
+                                <span class="text-xs">หัก เงินดาวน์ (<span id="dispDownPercentRow"></span>%)</span>
+                                <span class="text-lg font-bold" id="dispDownDeduct">0</span>
+                            </div>
+
+                            <div id="row-finance-amount" class="flex justify-between items-end text-blue-600 border-t border-gray-300 pt-1 mt-1 hidden">
+                                <span class="text-xs font-bold">ยอดจัดไฟแนนซ์ (Finance)</span>
+                                <span class="text-xl font-bold" id="dispFinanceAmount">0</span>
+                            </div>
                         </div>
                     </div>
 
@@ -393,7 +420,7 @@
         const tiers = [0, 10, 15, 20, 25];
         const terms = [48, 60, 72, 84];
 
-        // --- RATE DEFINITIONS (ALL INCLUDED) ---
+        // --- RATE DEFINITIONS ---
         // 1. CITY (Also City HB)
         const city_TL1 = {
             0: {48:1.79, 60:2.59, 72:3.19, 84:3.69},
@@ -504,7 +531,7 @@
             { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] }
         ];
 
-        // FULL HONDA DATA (V11 - RESTORED)
+        // FULL HONDA DATA
         let DEFAULT_DATA = {
             series: [
                 {
@@ -581,7 +608,6 @@
             renderSeriesList();
             populateSeriesDropdown();
             
-            // --- NEW: Restore Session ---
             setTimeout(restoreSession, 500); 
         }
 
@@ -592,7 +618,7 @@
             if(editSIdx !== -1) renderDetailLists();
         }
 
-        // --- NEW: SESSION MANAGEMENT (AUTO SAVE) ---
+        // --- SESSION MANAGEMENT (AUTO SAVE) ---
         function saveSession() {
             const sessionData = {
                 custName: document.getElementById('custName').value,
@@ -602,7 +628,10 @@
                 seriesIdx: document.getElementById('selectSeries').value,
                 subIdx: document.getElementById('selectSubModel').value,
                 colorIdx: document.getElementById('selectColor').value,
+                
+                // Discount
                 discount: document.getElementById('discount').value,
+                discountCarPrice: document.getElementById('discountCarPrice').value, // NEW
                 
                 // Finance
                 campIdx: document.getElementById('selectCampaign').value,
@@ -653,7 +682,7 @@
                         document.getElementById('selectCampaign').value = s.campIdx;
                         onCampaignSelect(); // Trigger finance load
                         
-                        if(s.finIdx) { // Might be empty string or index
+                        if(s.finIdx) { 
                             document.getElementById('selectFinanceCo').value = s.finIdx;
                         }
                     }
@@ -661,6 +690,7 @@
 
                 // Numeric Values
                 if(s.discount) document.getElementById('discount').value = s.discount;
+                if(s.discountCarPrice) document.getElementById('discountCarPrice').value = s.discountCarPrice; // NEW
                 if(s.intDiscount) document.getElementById('interestDiscount').value = s.intDiscount;
                 
                 // Down Payment
@@ -913,7 +943,7 @@
                 }
             } else { subSelect.disabled = true; colSelect.disabled = true; campSelect.disabled = true; }
             onCampaignSelect();
-            saveSession(); // Save Change
+            saveSession(); 
         }
 
         function onSubModelChange() {
@@ -1006,6 +1036,7 @@
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
             const pct = parseFloat(document.getElementById('downPercent').value) || 0;
+            // Down calculation is usually on Full Price
             document.getElementById('downAmount').value = ((price + color) * pct / 100).toFixed(0);
             calculateInterestAuto();
         }
@@ -1032,7 +1063,10 @@
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
             const totalCarPrice = price + color;
+            
             const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+
             const reg = parseFloat(document.getElementById('regFee').value) || 0;
             const ins = parseFloat(document.getElementById('insurance').value) || 0;
             const red = parseFloat(document.getElementById('redPlate').value) || 0;
@@ -1051,39 +1085,75 @@
             document.getElementById('sumBooking').innerText = "- " + fmt(book);
             document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
-            // --- ส่วนที่ถูกตัดออก (Campaign/Finance Logic for Display) ---
-            // ไม่ต้องแสดงผล dispCampName และ dispFinanceCo แล้ว
-            // ----------------------------------------------------
-
             const badge = document.getElementById('badge-mode');
             if (currentMode === 'finance') {
                 document.getElementById('preview-finance-table').classList.remove('hidden');
+                document.getElementById('row-finance-amount').classList.remove('hidden'); 
+                
                 badge.innerText = "FINANCE";
                 document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์";
                 document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
+                
                 if(recalcDown) {
                     const pct = parseFloat(document.getElementById('downPercent').value) || 0;
                     document.getElementById('downAmount').value = (totalCarPrice * pct / 100).toFixed(0);
                 }
                 const downAmt = parseFloat(document.getElementById('downAmount').value) || 0;
-                const financeAmt = totalCarPrice - downAmt; 
+                
+                // --- UPDATE LOGIC V11.9 ---
+                const priceAfterDiscount = totalCarPrice - discountCarPrice;
+                const financeAmt = priceAfterDiscount - downAmt;
+
+                // 1. Show Discount Row
+                if(discountCarPrice > 0) {
+                    document.getElementById('row-car-discount').classList.remove('hidden');
+                    document.getElementById('dispCarDiscount').innerText = "-" + fmt(discountCarPrice);
+                    
+                    // 2. Show Price After Discount Row
+                    document.getElementById('row-price-after-discount').classList.remove('hidden');
+                    document.getElementById('dispPriceAfterDiscount').innerText = fmt(priceAfterDiscount);
+                } else {
+                    document.getElementById('row-car-discount').classList.add('hidden');
+                    document.getElementById('row-price-after-discount').classList.add('hidden');
+                }
+
+                // 3. Show Deduct Down Payment Row
+                document.getElementById('row-down-deduct').classList.remove('hidden');
+                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                document.getElementById('dispDownDeduct').innerText = "-" + fmt(downAmt);
+
+                // 4. Show Finance Amount
+                document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
+                
                 document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                
                 [48, 60, 72, 84].forEach(term => {
                     const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
                     document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
+                    
+                    // Interest based on Finance Amount
                     const interestTotal = financeAmt * (rate/100) * (term/12);
                     const monthly = (financeAmt + interestTotal) / term;
                     document.getElementById('inst'+term).innerText = fmt(monthly);
                 });
+
                 document.getElementById('sumDown').innerText = fmt(downAmt);
+                // Grand Total = Down + Expenses - Booking - DownDiscount
                 const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             } else {
                 document.getElementById('preview-finance-table').classList.add('hidden');
+                // Hide Finance Specific Rows
+                document.getElementById('row-finance-amount').classList.add('hidden'); 
+                document.getElementById('row-car-discount').classList.add('hidden'); 
+                document.getElementById('row-price-after-discount').classList.add('hidden');
+                document.getElementById('row-down-deduct').classList.add('hidden');
+                
                 badge.innerText = "CASH";
                 document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
                 document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
                 document.getElementById('sumDown').innerText = fmt(totalCarPrice);
+                // Cash Mode uses main 'discount' field as Car Discount
                 const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             }
