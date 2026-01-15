@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - V13.2 (History Search)</title>
+    <title>Honda Quotation - V13.4 (Comma Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -74,7 +74,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.13.2) ระบบค้นหาประวัติ
+                <i class="fa-solid fa-circle-info"></i> (V.13.4) แก้ไขปัญหาพิมพ์ลูกน้ำ (,)
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -442,7 +442,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-sm border-l-4 border-green-500 pl-2 mb-2">รายการของแถม</h3>
-                        <ul id="displayGiftList" class="text-[10px] text-gray-600 list-decimal pl-4 grid grid-cols-3 gap-x-2 gap-y-1"></ul>
+                        <ul id="displayGiftList" class="text-[10px] text-gray-600 list-decimal pl-4 grid grid-cols-2 gap-x-4 gap-y-1 leading-relaxed"></ul>
                     </div>
                 </div>
             </div>
@@ -466,10 +466,11 @@
     </div>
 
     <script>
-        // --- 1. DATA STRUCTURE (UNCHANGED V11) ---
+        // --- 1. DATA STRUCTURE ---
         const tiers = [0, 10, 15, 20, 25];
         const terms = [48, 60, 72, 84];
-        const DEFAULT_GIFTS = "ประกันภัยชั้น 1, พรบ., ฟิล์มเซรามิก, กรอบป้าย";
+        // Changed default delimiter to |
+        const DEFAULT_GIFTS = "ประกันภัยชั้น 1|พรบ.|ฟิล์มเซรามิก|กรอบป้าย";
 
         let giftPresets = []; 
         let historyList = []; 
@@ -530,7 +531,7 @@
             
             // Initial load of Presets and Session
             loadPresetsFromStorage();
-            loadHistoryFromStorage(); // NEW
+            loadHistoryFromStorage(); 
             setTimeout(restoreSession, 500); 
         }
 
@@ -562,7 +563,7 @@
         }
         function loadGiftPreset() {
             const idx = document.getElementById('giftPresetSelect').value;
-            if(idx != -1) { const preset = giftPresets[idx]; const str = preset.items.join(','); document.getElementById('giftList').value = str; initGiftInputs(str); renderGifts(); }
+            if(idx != -1) { const preset = giftPresets[idx]; const str = preset.items.join('|'); document.getElementById('giftList').value = str; initGiftInputs(str); renderGifts(); }
         }
         function deleteGiftPreset() {
             const idx = document.getElementById('giftPresetSelect').value;
@@ -771,9 +772,11 @@
         }
         function resetToDefault() { if(confirm('รีเซ็ตฐานข้อมูลรุ่นรถทั้งหมด? ข้อมูลที่เพิ่มเองจะหายไป')) { localStorage.removeItem('carQuotationData_v11'); initData(); alert("รีเซ็ตเรียบร้อย"); } }
 
-        // --- DYNAMIC GIFT INPUTS (UNCHANGED) ---
+        // --- DYNAMIC GIFT INPUTS (UPDATED V13.4 - PIPE DELIMITER) ---
         function initGiftInputs(initialString) {
-            const list = initialString ? initialString.split(',').map(s=>s.trim()).filter(s=>s) : [];
+            // Detect if using old comma format or new pipe format
+            const delimiter = initialString.includes('|') ? '|' : ',';
+            const list = initialString ? initialString.split(delimiter).map(s=>s.trim()).filter(s=>s) : [];
             const container = document.getElementById('giftInputContainer'); container.innerHTML = '';
             list.forEach((txt, i) => addGiftRow(i+1, txt));
             addGiftRow(list.length + 1, '');
@@ -799,10 +802,13 @@
             } else { updateGiftString(); }
         }
         function reIndexGifts() { document.querySelectorAll('.gift-row').forEach((row, index) => { row.querySelector('span').innerText = (index + 1) + '.'; row.querySelector('input').placeholder = `ของแถมรายการที่ ${index + 1}`; }); }
+        
         function updateGiftString() {
             const inputs = document.querySelectorAll('#giftInputContainer input'); const values = [];
             inputs.forEach(inp => { if(inp.value.trim()) values.push(inp.value.trim()); });
-            document.getElementById('giftList').value = values.join(','); renderGifts();
+            // UPDATED: Join with | instead of ,
+            document.getElementById('giftList').value = values.join('|'); 
+            renderGifts();
         }
 
         // --- THEME & INTEREST LOGIC (UNCHANGED) ---
@@ -958,8 +964,11 @@
         }
 
         function renderGifts() {
-            const raw = document.getElementById('giftList').value; const items = raw.split(',').map(s => s.trim()).filter(s => s);
-            const list = document.getElementById('displayGiftList'); list.innerHTML = ''; items.forEach((i, idx) => { list.innerHTML += `<li>${i}</li>`; });
+            const raw = document.getElementById('giftList').value; 
+            // UPDATED: Split by |
+            const delimiter = raw.includes('|') ? '|' : ',';
+            const items = raw.split(delimiter).map(s => s.trim()).filter(s => s);
+            const list = document.getElementById('displayGiftList'); list.innerHTML = ''; items.forEach((i, idx) => { list.innerHTML += `<li class="break-words">${i}</li>`; });
             saveSession();
         }
 
