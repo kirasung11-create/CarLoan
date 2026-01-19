@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - A4 Refined</title>
+    <title>Honda Quotation - A4 Floor Down%</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -16,7 +16,7 @@
         
         body { font-family: 'Prompt', sans-serif; background-color: #525252; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } 
         
-        /* UI Controls Styles (เหมือนเดิม) */
+        /* UI Controls Styles */
         .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-btn { color: #6b7280; font-size: 0.8rem; }
         .input-mobile { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; background: #fff; }
@@ -113,7 +113,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.13.5) แก้ไขให้ปริ้นA4ได้และแก้ไขใบข้อเสนอการขายที่ส่งให้ลูกค้า
+                <i class="fa-solid fa-circle-info"></i> (V.13.5) แก้ไขปัญหาเงินดาวน์เด้ง
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -556,7 +556,7 @@
                 </div>
 
                 <div class="mt-6 text-center text-[10px] text-gray-300">
-                    เอกสารนี้เป็นเพียงการเสนอราคาเบื้องต้น เงื่อนไขอาจเปลี่ยนแปลงตามบริษัทกำหนด
+                    เอกสารนี้เป็นเพียงการเสนอราคาเบื้องต้น เงื่อนไขอาจเปลี่ยนแปลงตามการพิจารณาของสถาบันการเงิน
                 </div>
             </div>
 
@@ -1062,10 +1062,9 @@
             
             if(basePrice > 0) {
                 const newPct = (amt / basePrice * 100);
-                const currentVal = parseFloat(document.getElementById('downPercent').value) || 0;
-                if(Math.abs(newPct - currentVal) > 0.01) {
-                    document.getElementById('downPercent').value = newPct.toFixed(2);
-                }
+                // *** FIXED: Floor logic for percentage calculation ***
+                const flooredPct = Math.floor(newPct * 100) / 100;
+                document.getElementById('downPercent').value = flooredPct;
             }
             calculateInterestAuto();
         }
@@ -1118,7 +1117,9 @@
                         const currentAmt = parseFloat(document.getElementById('downAmount').value) || 0;
                         if(basePrice > 0) {
                             const newPct = (currentAmt / basePrice * 100);
-                            document.getElementById('downPercent').value = newPct.toFixed(2);
+                            // *** FIXED: Floor logic for percentage calculation ***
+                            const flooredPct = Math.floor(newPct * 100) / 100;
+                            document.getElementById('downPercent').value = flooredPct;
                         }
                     } else {
                         // User typed Percent: Keep % constant, update amount
@@ -1143,11 +1144,17 @@
                     document.getElementById('dispPriceAfterDiscount').innerText = fmt(totalCarPrice);
                 }
                 
+                // ******* FIXED SECTION FOR DOWN PERCENT DISPLAY *******
+                const rawPct = parseFloat(document.getElementById('downPercent').value) || 0;
+                // Force floor for display as well
+                const flooredPct = Math.floor(rawPct * 100) / 100;
+                const fmtPct = flooredPct.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+
                 document.getElementById('row-down-deduct').classList.remove('hidden');
-                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
+                document.getElementById('dispDownPercentRow').innerText = fmtPct; // Updated
                 document.getElementById('dispDownDeduct').innerText = "- " + fmt(downAmt); 
                 document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
-                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                document.getElementById('dispDownPercentPreview').innerText = fmtPct; // Updated
                 
                 [48, 60, 72, 84].forEach(term => {
                     const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
