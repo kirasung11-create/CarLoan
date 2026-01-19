@@ -3,14 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - V13.4 (Comma Fix)</title>
+    <title>Honda Quotation - A4 Refined</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } 
+        :root {
+            --theme-color: #2563eb; /* Default Blue */
+        }
+        
+        body { font-family: 'Prompt', sans-serif; background-color: #525252; -webkit-tap-highlight-color: transparent; padding-bottom: 130px; } 
+        
+        /* UI Controls Styles (เหมือนเดิม) */
         .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-btn { color: #6b7280; font-size: 0.8rem; }
         .input-mobile { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 100%; background: #fff; }
@@ -40,12 +46,45 @@
             margin-bottom: 5px;
         }
 
-        /* Animation for new gift input */
         .fade-in-up { animation: fadeInUp 0.3s ease-out; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Animation for removing */
         .fade-out { animation: fadeOut 0.2s ease-in forwards; }
         @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); height: 0; margin: 0; padding: 0; } }
+
+        /* === A4 STYLING & THEME CLASSES === */
+        #quotation-card {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Dynamic Theme Utilities */
+        .text-theme { color: var(--theme-color); }
+        .bg-theme { background-color: var(--theme-color); }
+        .border-theme { border-color: var(--theme-color); }
+        .bg-theme-soft { background-color: color-mix(in srgb, var(--theme-color) 10%, white); }
+        
+        /* Table Styles */
+        .a4-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .a4-table th { text-align: left; padding: 8px; color: #64748b; font-weight: 400; font-size: 14px; border-bottom: 2px solid #f1f5f9; }
+        .a4-table td { padding: 10px 8px; border-bottom: 1px solid #f8fafc; font-size: 15px; color: #334155; }
+        .a4-table tr:last-child td { border-bottom: none; }
+        
+        /* Detail Breakdown Grid */
+        .breakdown-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 14px; }
+        .breakdown-row.total { background-color: var(--theme-color); color: white; border-radius: 8px; padding: 12px; margin-top: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        /* Cost Box Styles */
+        .cost-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: #475569; border-bottom: 1px dashed #e2e8f0; }
+        .cost-row:last-child { border-bottom: none; }
+        .cost-row span:last-child { font-weight: 500; color: #1e293b; }
+        .cost-row.deduct span:last-child { color: #dc2626; }
+        .cost-row.highlight { font-weight: bold; color: #1e293b; }
     </style>
 </head>
 <body>
@@ -74,7 +113,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.13.4) แก้ไขปัญหาพิมพ์ลูกน้ำ (,)
+                <i class="fa-solid fa-circle-info"></i> (V.13.5) แก้ไขให้ปริ้นA4ได้และแก้ไขใบข้อเสนอการขายที่ส่งให้ลูกค้า
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -348,105 +387,180 @@
                 <i class="fa-solid fa-trash-can mr-2"></i> ล้างข้อมูลที่กรอกค้างไว้ (เริ่มใหม่)
             </button>
         </div>
+    </div>
+    
+    <div id="view-preview" class="hidden overflow-auto py-10 bg-gray-500">
+        <div id="quotation-card" class="p-8 pb-4 flex flex-col justify-between">
+            
+            <div class="mb-6 relative">
+                <div class="text-center">
+                    <div id="card-top-strip" class="hidden"></div> <h1 class="text-3xl font-extrabold text-gray-800 tracking-wider">ใบเสนอราคา</h1>
+                    <p class="text-xs text-gray-400 tracking-[0.2em] mb-3">QUOTATION</p>
+                    
+                    <h2 class="text-lg font-semibold text-theme" id="dispModelFull">Honda City Hatchback SV</h2>
+                     <span id="badge-mode" class="hidden"></span>
+                    <span id="head-cust-info" class="hidden"></span>
+                </div>
 
-        <div id="view-preview" class="hidden pb-48">
-            <div id="quotation-card" class="bg-white rounded-none md:rounded-xl shadow-lg relative overflow-hidden text-gray-800 w-full" style="min-height: 600px;">
-                <div id="card-top-strip" class="h-3 bg-gradient-to-r from-blue-600 to-indigo-800"></div>
-                
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="w-1/2">
-                            <h2 class="text-2xl font-bold text-gray-800">ใบเสนอราคา</h2>
-                            <p class="text-xs text-gray-500 mt-1">วันที่: <span id="currentDate"></span></p>
-                            <span id="badge-mode" class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">FINANCE</span>
-                        </div>
-                        <div class="w-1/2 text-right">
-                            <h3 id="head-cust-info" class="font-bold text-blue-700 text-sm">ข้อมูลลูกค้า (Customer)</h3>
-                            <p class="text-lg font-bold text-gray-800 mt-1" id="dispCustName">ชื่อลูกค้า</p>
-                            <p class="text-sm text-gray-600" id="dispCustTel">Tel: ...</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-                        <p class="text-xs text-gray-500 mb-1">รุ่นรถยนต์</p>
-                        <h1 class="text-xl font-bold text-gray-900 leading-tight" id="dispModelFull">เลือกรุ่นรถ</h1>
-                        <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
-                            <div class="flex justify-between items-end">
-                                <span class="text-xs text-gray-500">ราคารถรวมสี</span>
-                                <span class="text-xl font-bold text-gray-800" id="dispNetPrice">0</span>
-                            </div>
-                            
-                             <div id="row-car-discount" class="flex justify-between items-end text-red-600 hidden">
-                                <span class="text-xs">หัก ส่วนลดราคารถ</span>
-                                <span class="text-lg font-bold" id="dispCarDiscount">0</span>
-                            </div>
-
-                            <div id="row-price-after-discount" class="flex justify-between items-end text-gray-800 border-t border-dashed border-gray-300 pt-1 mt-1 hidden">
-                                <span class="text-xs font-semibold">ราคาสุทธิหลังหักส่วนลด</span>
-                                <span class="text-lg font-bold" id="dispPriceAfterDiscount">0</span>
-                            </div>
-
-                            <div id="row-down-deduct" class="flex justify-between items-end text-green-600 hidden">
-                                <span class="text-xs">หัก เงินดาวน์ (<span id="dispDownPercentRow"></span>%)</span>
-                                <span class="text-lg font-bold" id="dispDownDeduct">0</span>
-                            </div>
-
-                            <div id="row-finance-amount" class="flex justify-between items-end text-blue-600 border-t border-gray-300 pt-1 mt-1 hidden">
-                                <span class="text-xs font-bold">ยอดจัดไฟแนนซ์ (Finance)</span>
-                                <span class="text-xl font-bold" id="dispFinanceAmount">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="preview-finance-table" class="mb-6">
-                        <div class="flex justify-between items-center mb-2">
-                            <div class="flex flex-col">
-                                <h3 id="head-schedule" class="font-bold text-sm border-l-4 border-blue-500 pl-2">ตารางผ่อนชำระ</h3>
-                                </div>
-                            <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200">ดาวน์ <span id="dispDownPercentPreview">25</span>%</span>
-                        </div>
-                        <div class="overflow-hidden rounded-lg border border-gray-200">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-100 text-gray-600 text-xs">
-                                    <tr>
-                                        <th class="py-2 px-3 text-left">งวด</th>
-                                        <th class="py-2 px-3 text-center">ดอกเบี้ย</th>
-                                        <th class="py-2 px-3 text-right">ผ่อน/เดือน</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="py-2 px-3 text-gray-600">48 งวด(4ปี)</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate48">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst48">0</td></tr>
-                                    <tr><td class="py-2 px-3 text-gray-600">60 งวด(5ปี)</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate60">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst60">0</td></tr>
-                                    <tr><td class="py-2 px-3 text-gray-600">72 งวด(6ปี)</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate72">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst72">0</td></tr>
-                                    <tr><td class="py-2 px-3 text-gray-600">84 งวด(7ปี)</td><td class="py-2 px-3 text-center text-xs text-gray-400" id="dispRate84">-</td><td class="py-2 px-3 text-right font-bold text-gray-800 text-base" id="inst84">0</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <h3 class="font-bold text-sm border-l-4 border-orange-500 pl-2 mb-2">ค่าใช้จ่ายวันรับรถ (สรุปยอด)</h3>
-                        <div class="bg-orange-50 rounded-lg p-3 space-y-1 text-sm">
-                            <div class="flex justify-between"><span class="text-gray-700 font-semibold" id="lbl-pickup-main">เงินดาวน์</span> <span id="sumDown" class="font-semibold">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าจดทะเบียน</span> <span id="sumReg">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าเบี้ยประกัน</span> <span id="sumInsure">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">งวดแรกพร้อมวันรับรถ</span> <span id="sumAdvInst">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่ามัดจำป้ายแดง</span> <span id="sumRedPlate">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่า VAT 7%</span> <span id="sumVat">0</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 text-xs">ค่าอุปกรณ์เพิ่มเติม</span> <span id="sumAcc">0</span></div>
-                            <div class="border-t border-orange-200 my-1"></div>
-                            <div class="flex justify-between text-red-600"><span class="text-xs">หัก เงินมัดจำ</span> <span id="sumBooking">-0</span></div>
-                            <div class="flex justify-between text-red-600"><span class="text-xs" id="lbl-discount-summ">หัก ส่วนลดเงินดาวน์</span> <span id="sumDiscount">-0</span></div>
-                            <div class="bg-white rounded p-2 mt-2 flex justify-between items-center border border-orange-100 shadow-sm"><span class="font-bold text-gray-800">รวมสุทธิวันรับรถ</span><span class="font-bold text-xl text-orange-600" id="grandTotal">0</span></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-sm border-l-4 border-green-500 pl-2 mb-2">รายการของแถม</h3>
-                        <ul id="displayGiftList" class="text-[10px] text-gray-600 list-decimal pl-4 grid grid-cols-2 gap-x-4 gap-y-1 leading-relaxed"></ul>
-                    </div>
+                <div class="absolute top-0 right-0 text-right">
+                    <p class="text-gray-800 font-bold text-sm" id="dispCustName">คุณลูกค้า</p>
+                    <p class="text-gray-500 text-xs" id="dispCustTel">08x-xxx-xxxx</p>
+                    <p class="text-gray-400 text-[10px] mt-1" id="currentDate">19 ม.ค. 2569</p>
                 </div>
             </div>
+
+            <div class="flex gap-8 flex-1 items-start">
+                
+                <div class="flex-[3]">
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                        <div class="w-1 h-5 bg-theme"></div>
+                        <h3 class="font-bold text-gray-700">รายละเอียดการจัดไฟแนนซ์</h3>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden mb-6">
+                        <div class="breakdown-row bg-white">
+                            <span class="text-gray-500">ราคารถ (รวมค่าสี)</span>
+                            <span class="font-semibold text-gray-800" id="dispNetPrice">685,000</span>
+                        </div>
+                        
+                        <div id="row-car-discount" class="breakdown-row bg-white hidden">
+                            <span class="text-red-500 pl-4 text-xs"><i class="fa-solid fa-minus mr-1"></i> ส่วนลดราคารถ</span>
+                            <span class="text-red-500" id="dispCarDiscount">-0</span>
+                        </div>
+
+                        <div id="row-price-after-discount" class="breakdown-row bg-gray-50 border-t border-dashed border-gray-200 hidden">
+                             <span class="text-gray-700 font-bold text-xs">ราคาสุทธิ</span>
+                             <span class="font-bold text-gray-800" id="dispPriceAfterDiscount">685,000</span>
+                        </div>
+                        
+                        <div id="row-down-deduct" class="breakdown-row bg-white border-t border-gray-100">
+                             <span class="text-theme font-medium pl-4 text-xs"><i class="fa-solid fa-minus mr-1"></i> หัก เงินดาวน์ (<span id="dispDownPercentRow">25</span>%)</span>
+                             <span class="text-theme font-medium" id="dispDownDeduct">-0</span>
+                        </div>
+
+                        <div id="row-finance-amount" class="breakdown-row total">
+                            <span class="font-bold">ยอดจัดไฟแนนซ์ (Finance Amount)</span>
+                            <span class="font-bold text-xl" id="dispFinanceAmount">0</span>
+                        </div>
+                    </div>
+
+                    <div id="preview-finance-table" class="mt-2">
+                        <div class="flex justify-between items-center mb-2 px-1">
+                            <span class="font-bold text-sm text-gray-600" id="head-schedule"><i class="fa-regular fa-calendar-days mr-1"></i> ตารางผ่อนชำระ</span>
+                            <span class="text-[10px] text-gray-500 bg-gray-100 border rounded px-2 py-0.5">ดาวน์ <span id="dispDownPercentPreview">25</span>%</span>
+                        </div>
+                        <table class="a4-table border-t-2 border-theme">
+                            <thead>
+                                <tr>
+                                    <th width="40%">จำนวนงวด</th>
+                                    <th width="30%" class="text-center">ดอกเบี้ย</th>
+                                    <th width="30%" class="text-right">ค่างวด/เดือน</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>48 งวด (4 ปี)</td>
+                                    <td class="text-center text-gray-400"><span id="dispRate48">-</span></td>
+                                    <td class="text-right font-bold text-gray-800" id="inst48">0</td>
+                                </tr>
+                                <tr>
+                                    <td>60 งวด (5 ปี)</td>
+                                    <td class="text-center text-gray-400"><span id="dispRate60">-</span></td>
+                                    <td class="text-right font-bold text-gray-800" id="inst60">0</td>
+                                </tr>
+                                <tr>
+                                    <td>72 งวด (6 ปี)</td>
+                                    <td class="text-center text-gray-400"><span id="dispRate72">-</span></td>
+                                    <td class="text-right font-bold text-gray-800" id="inst72">0</td>
+                                </tr>
+                                <tr>
+                                    <td>84 งวด (7 ปี)</td>
+                                    <td class="text-center text-gray-400"><span id="dispRate84">-</span></td>
+                                    <td class="text-right font-bold text-gray-800" id="inst84">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex-[2] pt-8">
+                    <div class="bg-[#fff7ed] rounded-xl p-5 h-full flex flex-col border border-orange-100 shadow-sm">
+                        <h3 class="font-bold text-[#92400e] mb-4 flex items-center gap-2 border-b border-orange-200 pb-2">
+                            <i class="fa-solid fa-money-bill-wave"></i> ค่าใช้จ่ายวันรับรถ
+                        </h3>
+                        
+                        <div class="space-y-0 flex-1">
+                            <div class="cost-row highlight">
+                                <span id="lbl-pickup-main">เงินดาวน์</span>
+                                <span id="sumDown">0</span>
+                            </div>
+                            <div class="cost-row">
+                                <span>ค่าจดทะเบียน</span>
+                                <span id="sumReg">3,500</span>
+                            </div>
+                             <div class="cost-row">
+                                <span>ค่าเบี้ยประกัน</span>
+                                <span id="sumInsure">0</span>
+                            </div>
+                            <div class="cost-row">
+                                <span>งวดแรก (ถ้าจ่าย)</span>
+                                <span id="sumAdvInst">0</span>
+                            </div>
+                            <div class="cost-row">
+                                <span>มัดจำป้ายแดง</span>
+                                <span id="sumRedPlate">0</span>
+                            </div>
+                            <div class="cost-row">
+                                <span>VAT 7% / อื่นๆ</span>
+                                <span id="sumVat">0</span>
+                            </div>
+                            <div class="cost-row">
+                                <span>อุปกรณ์เพิ่มเติม</span>
+                                <span id="sumAcc">0</span>
+                            </div>
+                            
+                            <div class="my-4 border-t border-orange-200"></div>
+                            
+                            <div class="cost-row deduct">
+                                <span>หัก มัดจำป้ายแดง</span>
+                                <span id="sumRedPlateDeduct">- 0</span> 
+                            </div>
+                             <div class="cost-row deduct">
+                                <span>หัก มัดจำจอง</span>
+                                <span id="sumBooking">- 0</span> 
+                            </div>
+                            <div class="cost-row deduct">
+                                <span id="lbl-discount-summ">หัก ส่วนลด</span>
+                                <span id="sumDiscount">- 10,000</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-white border border-orange-200 rounded-lg p-3 text-center shadow-sm">
+                            <p class="text-[10px] text-gray-500 mb-1">รวมสุทธิวันรับรถ (Net Payment)</p>
+                            <p class="text-2xl font-extrabold text-[#c2410c]" id="grandTotal">0 บาท</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+            <div class="mt-6 pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-2 mb-3">
+                     <div class="w-1 h-5 bg-gray-400"></div>
+                     <h3 class="font-bold text-gray-600 text-sm">รายการของแถม (Free Accessories)</h3>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <ul id="displayGiftList" class="grid grid-cols-3 gap-x-6 gap-y-1 text-gray-600 text-[11px] list-decimal pl-5">
+                        </ul>
+                </div>
+
+                <div class="mt-6 text-center text-[10px] text-gray-300">
+                    เอกสารนี้เป็นเพียงการเสนอราคาเบื้องต้น เงื่อนไขอาจเปลี่ยนแปลงตามบริษัทกำหนด
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <div id="imageModal" class="fixed inset-0 z-[60] hidden flex flex-col justify-center items-center p-4">
@@ -516,6 +630,7 @@
         let appData = { series: [] };
         let editSIdx = -1, editCampIdx = -1, editFinIdx = -1; 
         let currentThemeColor = '#2563eb'; 
+        let downPaymentMode = 'percent'; // *** NEW ***
 
         function initData() {
             const savedData = localStorage.getItem('carQuotationData_v11'); 
@@ -570,7 +685,7 @@
             if(idx != -1) { if(confirm(`ต้องการลบชุด "${giftPresets[idx].name}" ใช่หรือไม่?`)) { giftPresets.splice(idx, 1); localStorage.setItem('giftPresets_v1', JSON.stringify(giftPresets)); renderPresetDropdown(); } } else { alert('กรุณาเลือกชุดที่ต้องการลบก่อน'); }
         }
 
-        // --- HISTORY MANAGEMENT (UPDATED V13.2) ---
+        // --- HISTORY MANAGEMENT ---
         function loadHistoryFromStorage() {
             const saved = localStorage.getItem('savedQuotations_v1');
             if(saved) { historyList = JSON.parse(saved); } else { historyList = []; }
@@ -645,7 +760,6 @@
             filteredList.forEach((item) => {
                 const div = document.createElement('div');
                 div.className = "bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:border-indigo-300 transition-colors";
-                // NOTE: Passing item.id instead of index for safer deletion when searching
                 div.innerHTML = `
                     <div onclick="loadHistoryItem(${item.id})">
                         <div class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-file-lines text-indigo-500 mr-2"></i>${item.title}</div>
@@ -772,9 +886,8 @@
         }
         function resetToDefault() { if(confirm('รีเซ็ตฐานข้อมูลรุ่นรถทั้งหมด? ข้อมูลที่เพิ่มเองจะหายไป')) { localStorage.removeItem('carQuotationData_v11'); initData(); alert("รีเซ็ตเรียบร้อย"); } }
 
-        // --- DYNAMIC GIFT INPUTS (UPDATED V13.4 - PIPE DELIMITER) ---
+        // --- DYNAMIC GIFT INPUTS ---
         function initGiftInputs(initialString) {
-            // Detect if using old comma format or new pipe format
             const delimiter = initialString.includes('|') ? '|' : ',';
             const list = initialString ? initialString.split(delimiter).map(s=>s.trim()).filter(s=>s) : [];
             const container = document.getElementById('giftInputContainer'); container.innerHTML = '';
@@ -806,18 +919,22 @@
         function updateGiftString() {
             const inputs = document.querySelectorAll('#giftInputContainer input'); const values = [];
             inputs.forEach(inp => { if(inp.value.trim()) values.push(inp.value.trim()); });
-            // UPDATED: Join with | instead of ,
             document.getElementById('giftList').value = values.join('|'); 
             renderGifts();
         }
 
-        // --- THEME & INTEREST LOGIC (UNCHANGED) ---
+        // --- THEME & INTEREST LOGIC ---
         function setTheme(color) {
             currentThemeColor = color; document.getElementById('customThemeColor').value = color;
+            
+            // Set CSS Variable for new design
+            document.documentElement.style.setProperty('--theme-color', color);
+
+            // Legacy ID support (keep for safe fallback/logic)
             document.getElementById('card-top-strip').style.background = `linear-gradient(to right, ${color}, #1e293b)`;
             document.getElementById('head-cust-info').style.color = color;
             const badge = document.getElementById('badge-mode'); badge.style.color = color; badge.style.borderColor = color + '40'; badge.style.backgroundColor = color + '15';
-            document.getElementById('head-schedule').style.borderLeftColor = color;
+            
             saveSession(); 
         }
 
@@ -907,8 +1024,12 @@
         }
 
         let currentMode = 'finance';
-        const dateOptions = { day: 'numeric', month: 'short', year: '2-digit' };
-        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('th-TH', dateOptions);
+        const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' }; // Modified year format
+        // Thai Year Format Fix
+        const date = new Date();
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById('currentDate').innerText = date.toLocaleDateString('th-TH', options);
+
         const fmt = (num) => parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
         function updateCustomerInfo() { document.getElementById('dispCustName').innerText = document.getElementById('custName').value || "ชื่อลูกค้า"; document.getElementById('dispCustTel').innerText = "Tel: " + (document.getElementById('custTel').value || "..."); saveSession(); }
@@ -918,15 +1039,34 @@
             calculate(); saveSession();
         }
 
+        // *** FIX: Separate mode logic ***
         function updateDownAmount() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
-            const pct = parseFloat(document.getElementById('downPercent').value) || 0; const basePrice = Math.max(0, (price + color) - discountCar);
-            document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0); calculateInterestAuto();
+            downPaymentMode = 'percent'; // Lock to percent mode
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const pct = parseFloat(document.getElementById('downPercent').value) || 0;
+            const basePrice = Math.max(0, (price + color) - discountCar);
+            
+            document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
+            calculateInterestAuto();
         }
+
         function updateDownPercent() {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
-            const amt = parseFloat(document.getElementById('downAmount').value) || 0; const basePrice = Math.max(0, (price + color) - discountCar);
-            if(basePrice > 0) { const newPct = (amt / basePrice * 100); const currentVal = parseFloat(document.getElementById('downPercent').value) || 0; if(Math.abs(newPct - currentVal) > 0.01) { document.getElementById('downPercent').value = newPct.toFixed(2); } }
+            downPaymentMode = 'amount'; // Lock to amount mode
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const amt = parseFloat(document.getElementById('downAmount').value) || 0;
+            const basePrice = Math.max(0, (price + color) - discountCar);
+            
+            if(basePrice > 0) {
+                const newPct = (amt / basePrice * 100);
+                const currentVal = parseFloat(document.getElementById('downPercent').value) || 0;
+                if(Math.abs(newPct - currentVal) > 0.01) {
+                    document.getElementById('downPercent').value = newPct.toFixed(2);
+                }
+            }
             calculateInterestAuto();
         }
 
@@ -936,39 +1076,111 @@
             document.getElementById('dispModelFull').innerText = text;
         }
 
+        // *** FIX: Logic in Calculate ***
         function calculate(recalcDown = true) {
-            const price = parseFloat(document.getElementById('carPrice').value) || 0; const color = parseFloat(document.getElementById('colorPrice').value) || 0; const totalCarPrice = price + color;
-            const discount = parseFloat(document.getElementById('discount').value) || 0; const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
-            const reg = parseFloat(document.getElementById('regFee').value) || 0; const ins = parseFloat(document.getElementById('insurance').value) || 0; const red = parseFloat(document.getElementById('redPlate').value) || 0; const book = parseFloat(document.getElementById('bookingDeduct').value) || 0; const adv = parseFloat(document.getElementById('advInstallment').value) || 0; const vat = parseFloat(document.getElementById('vatFee').value) || 0; const acc = parseFloat(document.getElementById('accFee').value) || 0;
+            const price = parseFloat(document.getElementById('carPrice').value) || 0;
+            const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const totalCarPrice = price + color;
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
+            const reg = parseFloat(document.getElementById('regFee').value) || 0;
+            const ins = parseFloat(document.getElementById('insurance').value) || 0;
+            const red = parseFloat(document.getElementById('redPlate').value) || 0;
+            const book = parseFloat(document.getElementById('bookingDeduct').value) || 0;
+            const adv = parseFloat(document.getElementById('advInstallment').value) || 0;
+            const vat = parseFloat(document.getElementById('vatFee').value) || 0;
+            const acc = parseFloat(document.getElementById('accFee').value) || 0;
 
-            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice); document.getElementById('sumReg').innerText = fmt(reg); document.getElementById('sumInsure').innerText = fmt(ins); document.getElementById('sumRedPlate').innerText = fmt(red); document.getElementById('sumAdvInst').innerText = fmt(adv); document.getElementById('sumVat').innerText = fmt(vat); document.getElementById('sumAcc').innerText = fmt(acc); document.getElementById('sumBooking').innerText = "- " + fmt(book); document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
+            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice);
+            document.getElementById('sumReg').innerText = fmt(reg);
+            document.getElementById('sumInsure').innerText = fmt(ins);
+            document.getElementById('sumRedPlate').innerText = fmt(red);
+            document.getElementById('sumAdvInst').innerText = fmt(adv);
+            document.getElementById('sumVat').innerText = fmt(vat);
+            document.getElementById('sumAcc').innerText = fmt(acc);
+            document.getElementById('sumBooking').innerText = "- " + fmt(book);
+            document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
             const badge = document.getElementById('badge-mode');
             if (currentMode === 'finance') {
-                document.getElementById('preview-finance-table').classList.remove('hidden'); document.getElementById('row-finance-amount').classList.remove('hidden'); 
-                badge.innerText = "FINANCE"; document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์"; document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
-                if(recalcDown) { const pct = parseFloat(document.getElementById('downPercent').value) || 0; const basePrice = Math.max(0, totalCarPrice - discountCarPrice); document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0); }
-                const downAmt = parseFloat(document.getElementById('downAmount').value) || 0; const priceAfterDiscount = totalCarPrice - discountCarPrice; const financeAmt = priceAfterDiscount - downAmt;
+                document.getElementById('preview-finance-table').classList.remove('hidden');
+                document.getElementById('row-finance-amount').classList.remove('hidden'); 
+                badge.innerText = "FINANCE";
+                document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์";
+                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
 
-                if(discountCarPrice > 0) { document.getElementById('row-car-discount').classList.remove('hidden'); document.getElementById('dispCarDiscount').innerText = "-" + fmt(discountCarPrice); document.getElementById('row-price-after-discount').classList.remove('hidden'); document.getElementById('dispPriceAfterDiscount').innerText = fmt(priceAfterDiscount); } else { document.getElementById('row-car-discount').classList.add('hidden'); document.getElementById('row-price-after-discount').classList.add('hidden'); }
-                document.getElementById('row-down-deduct').classList.remove('hidden'); document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2); document.getElementById('dispDownDeduct').innerText = "-" + fmt(downAmt); document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt); document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
+                // *** Fixed Logic Starts Here ***
+                const basePrice = Math.max(0, totalCarPrice - discountCarPrice);
                 
-                [48, 60, 72, 84].forEach(term => { const rate = parseFloat(document.getElementById('rate'+term).value) || 0; document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%'; const interestTotal = financeAmt * (rate/100) * (term/12); const monthly = (financeAmt + interestTotal) / term; document.getElementById('inst'+term).innerText = fmt(monthly); });
-                document.getElementById('sumDown').innerText = fmt(downAmt); const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount; document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+                if(recalcDown) {
+                      if(downPaymentMode === 'amount') {
+                        // User typed Amount: Keep amount constant, update %
+                        const currentAmt = parseFloat(document.getElementById('downAmount').value) || 0;
+                        if(basePrice > 0) {
+                            const newPct = (currentAmt / basePrice * 100);
+                            document.getElementById('downPercent').value = newPct.toFixed(2);
+                        }
+                    } else {
+                        // User typed Percent: Keep % constant, update amount
+                        const pct = parseFloat(document.getElementById('downPercent').value) || 0;
+                        document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
+                    }
+                }
+                
+                const downAmt = parseFloat(document.getElementById('downAmount').value) || 0;
+                const priceAfterDiscount = totalCarPrice - discountCarPrice;
+                const financeAmt = priceAfterDiscount - downAmt;
+
+                if(discountCarPrice > 0) {
+                    document.getElementById('row-car-discount').classList.remove('hidden');
+                    document.getElementById('dispCarDiscount').innerText = "-" + fmt(discountCarPrice);
+                    document.getElementById('row-price-after-discount').classList.remove('hidden');
+                    document.getElementById('dispPriceAfterDiscount').innerText = fmt(priceAfterDiscount);
+                } else {
+                    document.getElementById('row-car-discount').classList.add('hidden');
+                    document.getElementById('row-price-after-discount').classList.add('hidden');
+                     // Visual Fallback for the preview
+                    document.getElementById('dispPriceAfterDiscount').innerText = fmt(totalCarPrice);
+                }
+                
+                document.getElementById('row-down-deduct').classList.remove('hidden');
+                document.getElementById('dispDownPercentRow').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(2);
+                document.getElementById('dispDownDeduct').innerText = "- " + fmt(downAmt); 
+                document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
+                document.getElementById('dispDownPercentPreview').innerText = parseFloat(document.getElementById('downPercent').value).toFixed(0);
+                
+                [48, 60, 72, 84].forEach(term => {
+                    const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
+                    document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
+                    const interestTotal = financeAmt * (rate/100) * (term/12);
+                    const monthly = (financeAmt + interestTotal) / term;
+                    document.getElementById('inst'+term).innerText = fmt(monthly);
+                });
+                
+                document.getElementById('sumDown').innerText = fmt(downAmt);
+                const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
+                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             } else {
-                document.getElementById('preview-finance-table').classList.add('hidden'); document.getElementById('row-finance-amount').classList.add('hidden');  document.getElementById('row-car-discount').classList.add('hidden');  document.getElementById('row-price-after-discount').classList.add('hidden'); document.getElementById('row-down-deduct').classList.add('hidden');
-                badge.innerText = "CASH"; document.getElementById('lbl-pickup-main').innerText = "ราคารถ"; document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ"; document.getElementById('sumDown').innerText = fmt(totalCarPrice);
-                const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount; document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
+                document.getElementById('preview-finance-table').classList.add('hidden');
+                document.getElementById('row-finance-amount').classList.add('hidden'); 
+                document.getElementById('row-car-discount').classList.add('hidden'); 
+                document.getElementById('row-price-after-discount').classList.add('hidden');
+                document.getElementById('row-down-deduct').classList.add('hidden');
+                badge.innerText = "CASH";
+                document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
+                document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
+                document.getElementById('sumDown').innerText = fmt(totalCarPrice);
+                const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount;
+                document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             }
             saveSession(); 
         }
 
         function renderGifts() {
             const raw = document.getElementById('giftList').value; 
-            // UPDATED: Split by |
             const delimiter = raw.includes('|') ? '|' : ',';
             const items = raw.split(delimiter).map(s => s.trim()).filter(s => s);
-            const list = document.getElementById('displayGiftList'); list.innerHTML = ''; items.forEach((i, idx) => { list.innerHTML += `<li class="break-words">${i}</li>`; });
+            const list = document.getElementById('displayGiftList'); list.innerHTML = ''; items.forEach((i, idx) => { list.innerHTML += `<li class="break-words pl-2">${i}</li>`; });
             saveSession();
         }
 
