@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Honda Quotation - A4 Floor Down%</title>
+    <title>Honda Quotation - A4 Floor Down% (+Accessory)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -113,7 +113,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.13.5) แก้ไขปัญหาเงินดาวน์เด้ง
+                <i class="fa-solid fa-circle-info"></i> (V.13.6) เพิ่มฟังก์ชันบวกอุปกรณ์เข้ายอดจัด
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -285,10 +285,22 @@
                             <option value="-1">-- เลือกสี --</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded border">
-                        <div><label class="text-xs text-gray-500 ml-1">ราคารถ</label><input type="number" id="carPrice" class="input-mobile font-bold text-gray-800 bg-gray-100" readonly value="0"></div>
-                        <div><label class="text-xs text-gray-500 ml-1">ค่าสีเพิ่ม</label><input type="number" id="colorPrice" class="input-mobile text-blue-600 font-semibold bg-gray-100" readonly value="0"></div>
+                    
+                    <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2 rounded border">
+                        <div>
+                            <label class="text-[10px] text-gray-500 ml-1">ราคารถ</label>
+                            <input type="number" id="carPrice" class="input-mobile font-bold text-gray-800 bg-gray-100 px-1 text-center" readonly value="0">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 ml-1">ค่าสีเพิ่ม</label>
+                            <input type="number" id="colorPrice" class="input-mobile text-blue-600 font-semibold bg-gray-100 px-1 text-center" readonly value="0">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 ml-1">บวกอุปกรณ์(จัด)</label>
+                            <input type="number" id="accPriceFinance" class="input-mobile text-purple-600 font-semibold bg-white border-purple-200 px-1 text-center" placeholder="0" oninput="updateDownAmount()">
+                        </div>
                     </div>
+                    
                     <div>
                         <label class="text-xs text-gray-500 ml-1">ส่วนลด <span id="lbl-discount-type">(ส่วนลดเงินดาวน์)</span></label>
                         <input type="number" id="discount" class="input-mobile text-red-600" placeholder="0" oninput="calculate()">
@@ -356,7 +368,7 @@
                     <div><label class="text-xs text-gray-500 ml-1">มัดจำป้ายแดง</label><input type="number" id="redPlate" class="input-mobile" value="0" oninput="calculate()"></div>
                     <div><label class="text-xs text-gray-500 ml-1">งวดแรก (ถ้าจ่าย)</label><input type="number" id="advInstallment" class="input-mobile text-blue-600" placeholder="0" oninput="calculate()"></div>
                       <div><label class="text-xs text-gray-500 ml-1">ค่า VAT 7%</label><input type="number" id="vatFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
-                    <div><label class="text-xs text-gray-500 ml-1">อุปกรณ์เพิ่มเติม</label><input type="number" id="accFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
+                    <div><label class="text-xs text-gray-500 ml-1">อุปกรณ์เพิ่มเติม(เงินสด)</label><input type="number" id="accFee" class="input-mobile" placeholder="0" oninput="calculate()"></div>
                 </div>
                 <hr class="my-3 border-gray-100">
                 <div><label class="text-xs text-gray-500 ml-1">หัก เงินมัดจำจอง</label><input type="number" id="bookingDeduct" class="input-mobile text-red-600" value="0" oninput="calculate()"></div>
@@ -421,6 +433,11 @@
                         <div class="breakdown-row bg-white">
                             <span class="text-gray-500">ราคารถ (รวมค่าสี)</span>
                             <span class="font-semibold text-gray-800" id="dispNetPrice">685,000</span>
+                        </div>
+
+                        <div id="row-acc-finance" class="breakdown-row bg-white hidden">
+                            <span class="text-gray-500 pl-4 text-xs"><i class="fa-solid fa-plus mr-1"></i> ค่าอุปกรณ์ตกแต่ง (รวมยอดจัด)</span>
+                            <span class="text-gray-800 font-semibold" id="dispAccFinance">+0</span>
                         </div>
                         
                         <div id="row-car-discount" class="breakdown-row bg-white hidden">
@@ -630,7 +647,7 @@
         let appData = { series: [] };
         let editSIdx = -1, editCampIdx = -1, editFinIdx = -1; 
         let currentThemeColor = '#2563eb'; 
-        let downPaymentMode = 'percent'; // *** NEW ***
+        let downPaymentMode = 'percent';
 
         function initData() {
             const savedData = localStorage.getItem('carQuotationData_v11'); 
@@ -704,6 +721,7 @@
                 colorIdx: document.getElementById('selectColor').value,
                 discount: document.getElementById('discount').value,
                 discountCarPrice: document.getElementById('discountCarPrice').value, 
+                accFinance: document.getElementById('accPriceFinance').value, // Saved
                 campIdx: document.getElementById('selectCampaign').value,
                 finIdx: document.getElementById('selectFinanceCo').value,
                 intDiscount: document.getElementById('interestDiscount').value,
@@ -813,6 +831,7 @@
                 colorIdx: document.getElementById('selectColor').value,
                 discount: document.getElementById('discount').value,
                 discountCarPrice: document.getElementById('discountCarPrice').value, 
+                accFinance: document.getElementById('accPriceFinance').value, // Save Acc Finance
                 campIdx: document.getElementById('selectCampaign').value,
                 finIdx: document.getElementById('selectFinanceCo').value,
                 intDiscount: document.getElementById('interestDiscount').value,
@@ -854,6 +873,7 @@
 
                 if(s.discount) document.getElementById('discount').value = s.discount;
                 if(s.discountCarPrice) document.getElementById('discountCarPrice').value = s.discountCarPrice; 
+                if(s.accFinance) document.getElementById('accPriceFinance').value = s.accFinance; // Load Acc Finance
                 if(s.intDiscount) document.getElementById('interestDiscount').value = s.intDiscount;
                 if(s.downAmount) document.getElementById('downAmount').value = s.downAmount;
                 if(s.downPercent) document.getElementById('downPercent').value = s.downPercent;
@@ -1039,14 +1059,14 @@
             calculate(); saveSession();
         }
 
-        // *** FIX: Separate mode logic ***
         function updateDownAmount() {
             downPaymentMode = 'percent'; // Lock to percent mode
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const accFinance = parseFloat(document.getElementById('accPriceFinance').value) || 0; // Add Accessory Finance
             const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
             const pct = parseFloat(document.getElementById('downPercent').value) || 0;
-            const basePrice = Math.max(0, (price + color) - discountCar);
+            const basePrice = Math.max(0, (price + color + accFinance) - discountCar);
             
             document.getElementById('downAmount').value = (basePrice * pct / 100).toFixed(0);
             calculateInterestAuto();
@@ -1056,13 +1076,13 @@
             downPaymentMode = 'amount'; // Lock to amount mode
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
+            const accFinance = parseFloat(document.getElementById('accPriceFinance').value) || 0; // Add Accessory Finance
             const discountCar = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
             const amt = parseFloat(document.getElementById('downAmount').value) || 0;
-            const basePrice = Math.max(0, (price + color) - discountCar);
+            const basePrice = Math.max(0, (price + color + accFinance) - discountCar);
             
             if(basePrice > 0) {
                 const newPct = (amt / basePrice * 100);
-                // *** FIXED: Floor logic for percentage calculation ***
                 const flooredPct = Math.floor(newPct * 100) / 100;
                 document.getElementById('downPercent').value = flooredPct;
             }
@@ -1075,11 +1095,12 @@
             document.getElementById('dispModelFull').innerText = text;
         }
 
-        // *** FIX: Logic in Calculate ***
         function calculate(recalcDown = true) {
             const price = parseFloat(document.getElementById('carPrice').value) || 0;
             const color = parseFloat(document.getElementById('colorPrice').value) || 0;
-            const totalCarPrice = price + color;
+            const accFinance = parseFloat(document.getElementById('accPriceFinance').value) || 0; // Added Accessory Finance
+            const totalCarPrice = price + color + accFinance; // Included in total
+            
             const discount = parseFloat(document.getElementById('discount').value) || 0;
             const discountCarPrice = parseFloat(document.getElementById('discountCarPrice').value) || 0; 
             const reg = parseFloat(document.getElementById('regFee').value) || 0;
@@ -1090,7 +1111,7 @@
             const vat = parseFloat(document.getElementById('vatFee').value) || 0;
             const acc = parseFloat(document.getElementById('accFee').value) || 0;
 
-            document.getElementById('dispNetPrice').innerText = fmt(totalCarPrice);
+            document.getElementById('dispNetPrice').innerText = fmt(price + color); // Base car price
             document.getElementById('sumReg').innerText = fmt(reg);
             document.getElementById('sumInsure').innerText = fmt(ins);
             document.getElementById('sumRedPlate').innerText = fmt(red);
@@ -1100,6 +1121,14 @@
             document.getElementById('sumBooking').innerText = "- " + fmt(book);
             document.getElementById('sumDiscount').innerText = "- " + fmt(discount);
 
+            // Update Preview Row for Accessory Finance
+            if(accFinance > 0) {
+                document.getElementById('row-acc-finance').classList.remove('hidden');
+                document.getElementById('dispAccFinance').innerText = "+ " + fmt(accFinance);
+            } else {
+                document.getElementById('row-acc-finance').classList.add('hidden');
+            }
+
             const badge = document.getElementById('badge-mode');
             if (currentMode === 'finance') {
                 document.getElementById('preview-finance-table').classList.remove('hidden');
@@ -1108,7 +1137,6 @@
                 document.getElementById('lbl-pickup-main').innerText = "เงินดาวน์";
                 document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดเงินดาวน์";
 
-                // *** Fixed Logic Starts Here ***
                 const basePrice = Math.max(0, totalCarPrice - discountCarPrice);
                 
                 if(recalcDown) {
@@ -1117,7 +1145,6 @@
                         const currentAmt = parseFloat(document.getElementById('downAmount').value) || 0;
                         if(basePrice > 0) {
                             const newPct = (currentAmt / basePrice * 100);
-                            // *** FIXED: Floor logic for percentage calculation ***
                             const flooredPct = Math.floor(newPct * 100) / 100;
                             document.getElementById('downPercent').value = flooredPct;
                         }
@@ -1140,21 +1167,19 @@
                 } else {
                     document.getElementById('row-car-discount').classList.add('hidden');
                     document.getElementById('row-price-after-discount').classList.add('hidden');
-                     // Visual Fallback for the preview
+                    // Fallback
                     document.getElementById('dispPriceAfterDiscount').innerText = fmt(totalCarPrice);
                 }
                 
-                // ******* FIXED SECTION FOR DOWN PERCENT DISPLAY *******
                 const rawPct = parseFloat(document.getElementById('downPercent').value) || 0;
-                // Force floor for display as well
                 const flooredPct = Math.floor(rawPct * 100) / 100;
                 const fmtPct = flooredPct.toLocaleString('th-TH', { maximumFractionDigits: 2 });
 
                 document.getElementById('row-down-deduct').classList.remove('hidden');
-                document.getElementById('dispDownPercentRow').innerText = fmtPct; // Updated
+                document.getElementById('dispDownPercentRow').innerText = fmtPct; 
                 document.getElementById('dispDownDeduct').innerText = "- " + fmt(downAmt); 
                 document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
-                document.getElementById('dispDownPercentPreview').innerText = fmtPct; // Updated
+                document.getElementById('dispDownPercentPreview').innerText = fmtPct; 
                 
                 [48, 60, 72, 84].forEach(term => {
                     const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
@@ -1174,7 +1199,7 @@
                 document.getElementById('row-price-after-discount').classList.add('hidden');
                 document.getElementById('row-down-deduct').classList.add('hidden');
                 badge.innerText = "CASH";
-                document.getElementById('lbl-pickup-main').innerText = "ราคารถ";
+                document.getElementById('lbl-pickup-main').innerText = "ราคารถ(รวม)";
                 document.getElementById('lbl-discount-summ').innerText = "หัก ส่วนลดราคารถ";
                 document.getElementById('sumDown').innerText = fmt(totalCarPrice);
                 const grandTotal = totalCarPrice + reg + ins + red + adv + vat + acc - book - discount;
