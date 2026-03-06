@@ -113,7 +113,7 @@
 
         <div id="view-settings" class="space-y-4 hidden animate-fade-in pb-20">
             <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-800">
-                <i class="fa-solid fa-circle-info"></i> (V.13.6) เพิ่มฟังก์ชันบวกอุปกรณ์เข้ายอดจัด
+                <i class="fa-solid fa-circle-info"></i> (V.13.7) เพิ่มดอกเบี้ย 99 งวด KKP
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -648,6 +648,21 @@ id="inst99">
         const city_TL3 = { 0: {48:3.45, 60:3.85, 72:4.25, 84:4.79}, 10: {48:3.09, 60:3.59, 72:3.89, 84:4.19}, 15: {48:2.49, 60:2.85, 72:3.29, 84:3.69}, 20: {48:1.89, 60:2.29, 72:2.69, 84:3.19}, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
         const city_Sub_AY = { 0: {48:3.90, 60:4.20, 72:4.50, 84:5.10}, 10: {48:3.50, 60:3.90, 72:4.20, 84:4.60}, 15: {48:3.00, 60:3.20, 72:3.60, 84:4.10}, 20: {48:2.40, 60:2.60, 72:3.00, 84:3.60}, 25: {48:2.19, 60:2.44, 72:2.84, 84:3.40} };
         const city_Sub_HLTC = { 0: {48:3.55, 60:3.95, 72:4.25, 84:4.65}, 10: {48:3.55, 60:3.95, 72:4.25, 84:4.65}, 15: {48:3.05, 60:3.25, 72:3.65, 84:4.15}, 20: {48:2.45, 60:2.65, 72:3.05, 84:3.65}, 25: {48:2.25, 60:2.49, 72:2.89, 84:3.45} };
+        const city_Sub_KKP = {
+0:{48:4.19,60:4.29,72:4.59,84:4.89,99:0},
+10:{48:3.79,60:3.99,72:4.29,84:4.69,99:5.09},
+15:{48:3.19,60:3.29,72:3.69,84:4.19,99:4.59},
+20:{48:2.69,60:2.79,72:3.09,84:3.69,99:4.09},
+25:{48:2.49,60:2.69,72:2.95,84:3.49,99:3.89}
+};
+
+        const honda_Sub_KKP = {
+0:{48:3.99,60:4.29,72:4.59,84:4.89,99:0},
+10:{48:3.29,60:3.69,72:3.79,84:4.69,99:4.89},
+15:{48:2.69,60:2.79,72:3.19,84:3.59,99:3.99},
+20:{48:2.29,60:2.39,72:2.69,84:3.09,99:3.49},
+25:{48:1.99,60:2.29,72:2.59,84:2.79,99:3.29}
+};
 
         const hrv_TL1 = { 0: {48:2.19, 60:2.79, 72:3.39, 84:3.89}, 10: {48:1.69, 60:2.39, 72:3.19, 84:3.69}, 15: {48:1.29, 60:1.79, 72:2.39, 84:3.19}, 20: {48:0.59, 60:1.19, 72:1.89, 84:2.59}, 25: {48:0.00, 60:0.79, 72:1.49, 84:2.19} };
         const hrv_TL2 = { 0: {48:3.45, 60:3.85, 72:4.25, 84:4.79}, 10: {48:3.09, 60:3.59, 72:3.89, 84:4.19}, 15: {48:2.49, 60:2.85, 72:3.29, 84:3.69}, 20: {48:1.89, 60:2.29, 72:2.69, 84:3.19}, 25: {48:0.99, 60:1.99, 72:2.45, 84:2.99} };
@@ -663,10 +678,68 @@ id="inst99">
         function createEmptyMatrix() { let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 , 99:0 }; }); return m; }
         function createDefaultMatrix() { return createEmptyMatrix(); }
 
-        const cityCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] }, { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC }, { name: "AY (Krungsri)", matrix: city_Sub_AY } ] } ];
-        const hrvCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: hrv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: hrv_Sub_AY } ] } ];
-        const crvCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] } ];
-        const accordCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC }, { name: "AY (Krungsri)", matrix: crv_Sub_AY } ] } ];
+const DEFAULT_FINANCES = [
+ { name: "HLTC (Honda Leasing)", matrix: createDefaultMatrix() },
+ { name: "AY (Krungsri)", matrix: createDefaultMatrix() },
+ { name: "KKP (Kiatnakin)", matrix: createDefaultMatrix() }
+];
+
+const cityCampaigns = [
+ { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { 
+   name: "ทางเลือกเงินช่วย (Subsidy)",
+   matrix: createEmptyMatrix(),
+   finances: [
+ { name:"HLTC", matrix: city_Sub_HLTC },
+ { name:"AY", matrix: city_Sub_AY },
+ { name:"KKP", matrix: city_Sub_KKP }
+]
+ }
+];
+
+const hrvCampaigns = [
+ { name: "ทล1 (ทางเลือก 1)", matrix: hrv_TL1, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { name: "ทล2 (ทางเลือก 2)", matrix: hrv_TL2, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { 
+   name: "ทางเลือกเงินช่วย (Subsidy)",
+   matrix: createEmptyMatrix(),
+   finances: [
+ { name:"HLTC", matrix: hrv_Sub_HLTC },
+ { name:"AY", matrix: hrv_Sub_AY },
+ { name:"KKP", matrix: honda_Sub_KKP }
+]
+ }
+];
+
+const crvCampaigns = [
+ { name: "ทล1 (ทางเลือก 1)", matrix: crv_TL1, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ {
+   name: "ทางเลือกเงินช่วย (Subsidy)",
+   matrix: createEmptyMatrix(),
+   finances: [
+     { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
+     { name: "AY (Krungsri)", matrix: crv_Sub_AY },
+     { name:"KKP", matrix: honda_Sub_KKP }
+   ]
+ }
+];
+
+const accordCampaigns = [
+ { name: "ทล1 (ทางเลือก 1)", matrix: accord_TL1_Diff25, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ { name: "ทล2 (ทางเลือก 2)", matrix: crv_TL2, finances: JSON.parse(JSON.stringify(DEFAULT_FINANCES)) },
+ {
+   name: "ทางเลือกเงินช่วย (Subsidy)",
+   matrix: createEmptyMatrix(),
+   finances: [
+     { name: "HLTC (Honda Leasing)", matrix: crv_Sub_HLTC },
+     { name: "AY (Krungsri)", matrix: crv_Sub_AY },
+     { name:"KKP", matrix: honda_Sub_KKP }
+   ]
+ }
+];
 
         // FULL HONDA DATA (UNCHANGED)
         let DEFAULT_DATA = {
@@ -1066,7 +1139,18 @@ id="inst99">
         function onCampaignSelect() {
             const sIdx = document.getElementById('selectSeries').value; const campIdx = document.getElementById('selectCampaign').value; const finContainer = document.getElementById('financeSelectorContainer'); const finSelect = document.getElementById('selectFinanceCo');
             finSelect.innerHTML = ''; finContainer.classList.add('hidden');
-            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; if(camp.finances && camp.finances.length > 0) { finContainer.classList.remove('hidden'); camp.finances.forEach((f, idx) => { finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`; }); } }
+            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx];
+
+if(camp.name.includes("เงินช่วย") && camp.finances && camp.finances.length > 0) {
+    finContainer.classList.remove('hidden');
+
+    camp.finances.forEach((f, idx) => {
+        finSelect.innerHTML += `<option value="${idx}">${f.name}</option>`;
+    });
+
+} else {
+    finContainer.classList.add('hidden');
+} }
             calculateInterestAuto();
         }
 
@@ -1075,7 +1159,7 @@ id="inst99">
         function calculateInterestAuto() {
             const sIdx = document.getElementById('selectSeries').value; const campIdx = document.getElementById('selectCampaign').value; const downPct = parseFloat(document.getElementById('downPercent').value) || 0; const discount = parseFloat(document.getElementById('interestDiscount').value) || 0; 
             const finContainer = document.getElementById('financeSelectorContainer'); let useFinance = !finContainer.classList.contains('hidden'); let finIdx = document.getElementById('selectFinanceCo').value;
-            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; let activeMatrix = camp.matrix; if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix; if(activeMatrix) { [48, 60, 72, 84].forEach(t => { const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount); document.getElementById('rate'+t).value = r.toFixed(2); }); } }
+            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; let activeMatrix = camp.matrix; if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix; if(activeMatrix) { [48, 60, 72, 84, 99].forEach(t => { const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount); document.getElementById('rate'+t).value = r.toFixed(2); }); } }
             calculate(false);
         }
 
@@ -1217,14 +1301,33 @@ id="inst99">
                 document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
                 document.getElementById('dispDownPercentPreview').innerText = fmtPct; 
                 
-                [48, 60, 72, 84, 99].forEach(term => {
-                    const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
-                    document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
-                    const interestTotal = financeAmt * (rate/100) * (term/12);
-                    const monthly = (financeAmt + interestTotal) / term;
-                    document.getElementById('inst'+term).innerText = fmt(monthly);
-                });
-                
+const finSelect = document.getElementById('selectFinanceCo');
+let selectedFinanceName = "";
+
+if(finSelect && finSelect.selectedIndex >= 0){
+    selectedFinanceName = finSelect.options[finSelect.selectedIndex].text;
+}
+
+[48, 60, 72, 84, 99].forEach(term => {
+
+    const row = document.getElementById('inst'+term)?.closest('tr');
+
+    // ซ่อน 99 งวด ถ้าไม่ใช่ SUP
+    if(term === 99 && !selectedFinanceName.includes("KKP")){
+        if(row) row.style.display = "none";
+        return;
+    }else{
+        if(row) row.style.display = "";
+    }
+
+    const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
+    document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
+
+    const interestTotal = financeAmt * (rate/100) * (term/12);
+    const monthly = (financeAmt + interestTotal) / term;
+
+    document.getElementById('inst'+term).innerText = fmt(Math.round(monthly));
+});
                 document.getElementById('sumDown').innerText = fmt(downAmt);
                 const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
