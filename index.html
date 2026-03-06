@@ -202,6 +202,7 @@
                                         <th class="w-1/5">60</th>
                                         <th class="w-1/5">72</th>
                                         <th class="w-1/5">84</th>
+                                        <th class="w-1/5">99</th>
                                     </tr>
                                 </thead>
                                 <tbody id="rateMatrixBody"></tbody>
@@ -352,12 +353,36 @@
                     <span class="text-[10px] text-green-600 bg-green-100 px-2 rounded-full" id="interest-badge">Auto</span>
                 </div>
                 
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="text-center"><span class="text-[10px] text-gray-400">48งวด</span><input type="number" id="rate48" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
-                    <div class="text-center"><span class="text-[10px] text-gray-400">60งวด</span><input type="number" id="rate60" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
-                    <div class="text-center"><span class="text-[10px] text-gray-400">72งวด</span><input type="number" id="rate72" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
-                    <div class="text-center"><span class="text-[10px] text-gray-400">84งวด</span><input type="number" id="rate84" class="input-mobile p-1 text-center text-sm bg-gray-50" value="0" step="0.01" oninput="calculate()"></div>
-                </div>
+
+<div class="grid grid-cols-5 gap-2">
+
+<div class="text-center">
+<span class="text-[10px] text-gray-400">48งวด</span>
+<input id="rate48" class="input-mobile p-1 text-center text-sm bg-gray-50">
+</div>
+
+<div class="text-center">
+<span class="text-[10px] text-gray-400">60งวด</span>
+<input id="rate60" class="input-mobile p-1 text-center text-sm bg-gray-50">
+</div>
+
+<div class="text-center">
+<span class="text-[10px] text-gray-400">72งวด</span>
+<input id="rate72" class="input-mobile p-1 text-center text-sm bg-gray-50">
+</div>
+
+<div class="text-center">
+<span class="text-[10px] text-gray-400">84งวด</span>
+<input id="rate84" class="input-mobile p-1 text-center text-sm bg-gray-50">
+</div>
+
+<div class="text-center">
+<span class="text-[10px] text-gray-400">99งวด</span>
+<input id="rate99" class="input-mobile p-1 text-center text-sm bg-gray-50">
+</div>
+
+</div>
+               
             </div>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -494,7 +519,18 @@
                                     <td>84 งวด (7 ปี)</td>
                                     <td class="text-center text-gray-400"><span id="dispRate84">-</span></td>
                                     <td class="text-right font-bold text-gray-800" id="inst84">0</td>
+
                                 </tr>
+<tr>
+<td>99 งวด (8 ปี 3 เดือน)</td>
+<td class="text-center text-gray-400">
+<span id="dispRate99">-</span>
+</td>
+<td class="text-right font-bold text-gray-800"
+id="inst99">
+0
+</td>
+</tr>
                             </tbody>
                         </table>
                     </div>
@@ -599,7 +635,7 @@
     <script>
         // --- 1. DATA STRUCTURE ---
         const tiers = [0, 10, 15, 20, 25];
-        const terms = [48, 60, 72, 84];
+        const terms = [48, 60, 72, 84, 99];
         // Changed default delimiter to |
         const DEFAULT_GIFTS = "ประกันภัยชั้น 1|พรบ.|ฟิล์มเซรามิก|กรอบป้าย";
 
@@ -624,7 +660,7 @@
         const crv_Sub_AY = hrv_Sub_AY; 
         const crv_Sub_HLTC = hrv_Sub_HLTC; 
 
-        function createEmptyMatrix() { let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 }; }); return m; }
+        function createEmptyMatrix() { let m = {}; tiers.forEach(t => { m[t] = { 48:0, 60:0, 72:0, 84:0 , 99:0 }; }); return m; }
         function createDefaultMatrix() { return createEmptyMatrix(); }
 
         const cityCampaigns = [ { name: "ทล1 (ทางเลือก 1)", matrix: city_TL1, finances: [] }, { name: "ทล2 (ทางเลือก 2)", matrix: city_TL2, finances: [] }, { name: "ทล3 (ทางเลือก 3)", matrix: city_TL3, finances: [] }, { name: "ทางเลือกเงินช่วย (Subsidy)", matrix: createEmptyMatrix(), finances: [ { name: "HLTC (Honda Leasing)", matrix: city_Sub_HLTC }, { name: "AY (Krungsri)", matrix: city_Sub_AY } ] } ];
@@ -639,7 +675,7 @@
                 { id: 2, name: "Honda City Hatchback", subModels: [ { name: "S+", price: 599000 }, { name: "SV", price: 679000 }, { name: "RS", price: 749000 }, { name: "e:HEV SV", price: 729000 }, { name: "e:HEV RS", price: 799000 } ], colors: [ { name: "สีขาวมุก", price: 10000 }, { name: "สีดำคริสตัล", price: 6000 }, { name: "สีน้ำเงินบริลเลียนท์ สปอร์ตตี้", price: 0 }, { name: "สีเทาโซนิค", price: 6000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีขาวทาฟเฟต้า", price: 0 }, { name: "สีน้ำเงินออบซิเดียน", price: 0 } ], campaigns: JSON.parse(JSON.stringify(cityCampaigns)) },
                 { id: 3, name: "Honda HR-V e:HEV", subModels: [ { name: "E", price: 949000 }, { name: "EL", price: 1079000 }, { name: "RS", price: 1179000 } ], colors: [ { name: "สีดำคริสตัล", price: 8000 }, { name: "สีแดงอิกไนซ์ หลังคาสีดำทูโทน", price: 10000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีขาวซันไลท์", price: 12000 }, { name: "สีกากีแซนด์ หลังคาสีดำทูโทน", price: 14000 }, { name: "สีเทาเมทิเออรอยด์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(hrvCampaigns)) },
                 { id: 4, name: "Honda Civic e:HEV", subModels: [ { name: "EL+", price: 1099000 }, { name: "RS", price: 1239000 } ], colors: [ { name: "สีดำคริสตัล", price: 8000 }, { name: "สีขาวแพลทินัม", price: 12000 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีเงินลูนาร์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(hrvCampaigns)) },
-                { id: 5, name: "Honda CR-V e:HEV", subModels: [ { name: "E (5 Seats)", price: 1399000 }, { name: "ES (5 Seats)", price: 1549000 }, { name: "HuNT (5 Seats)", price: 1599000 }, { name: "RS (5 Seats)", price: 1659000 }, { name: "RS 4WD (5 Seats)", price: 1729000 } ], colors: [ { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเทาเออร์เบิน", price: 10000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(crvCampaigns)) },
+                { id: 5, name: "Honda CR-V e:HEV", subModels: [ { name: "E", price: 1399000 }, { name: "ES", price: 1549000 }, { name: "HuNT", price: 1599000 }, { name: "RS", price: 1659000 }, { name: "RS 4WD", price: 1729000 } ], colors: [ { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเทาเออร์เบิน", price: 10000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 }, { name: "สีแดงอิกไนต์", price: 0 }, { name: "สีน้ำเงินแคนยอนริเวอร์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(crvCampaigns)) },
                 { id: 6, name: "Honda Accord e:HEV", subModels: [ { name: "E", price: 1479000 }, { name: "EL", price: 1599000 }, { name: "RS", price: 1729000 } ], colors: [ { name: "สีดำคริสตัล", price: 10000 }, { name: "สีขาวมุก", price: 14000 }, { name: "สีเงินลูนาร์", price: 0 }, { name: "สีเทาเมทิเออรอยด์", price: 0 } ], campaigns: JSON.parse(JSON.stringify(accordCampaigns)) }
             ]
         };
@@ -1181,7 +1217,7 @@
                 document.getElementById('dispFinanceAmount').innerText = fmt(financeAmt);
                 document.getElementById('dispDownPercentPreview').innerText = fmtPct; 
                 
-                [48, 60, 72, 84].forEach(term => {
+                [48, 60, 72, 84, 99].forEach(term => {
                     const rate = parseFloat(document.getElementById('rate'+term).value) || 0;
                     document.getElementById('dispRate'+term).innerText = rate.toFixed(2) + '%';
                     const interestTotal = financeAmt * (rate/100) * (term/12);
