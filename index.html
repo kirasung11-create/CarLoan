@@ -32,7 +32,9 @@
         
         .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
         .color-dot:active { transform: scale(0.9); }
-        .color-dot.selected { ring: 2px; ring-color: #cbd5e1; transform: scale(1.1); }
+        .color-dot.selected { outline: 2px solid #cbd5e1; transform: scale(1.1); }
+
+        .touch-target { min-height: 44px; min-width: 44px; cursor: pointer; }
 
         .rate-table th { font-size: 0.75rem; color: #6b7280; padding: 4px; font-weight: normal; }
         .rate-table td { padding: 2px; }
@@ -382,6 +384,42 @@
 </div>
 
 </div>
+
+<div class="mt-3 p-3 bg-gray-100 rounded border">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+    <div>
+      <label class="text-xs text-gray-500">จำนวนงวดกำหนดเอง</label>
+      <input type="number" id="customTerm" class="input-mobile" placeholder="เช่น 36" min="1" oninput="onCustomTermInput()">
+    </div>
+    <div>
+      <label class="text-xs text-gray-500">ดอกเบี้ย</label>
+      <input type="number" id="rateCustom" class="input-mobile" placeholder="-" oninput="onCustomRateInput()">
+    </div>
+  </div>
+  <div class="mt-3">
+      <label class="text-xs text-gray-500">เลือกจำนวนงวดที่จะแสดงในใบเสนอราคา</label>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTerm48" checked onchange="updateTermVisibility()"> 48 งวด
+          </label>
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTerm60" checked onchange="updateTermVisibility()"> 60 งวด
+          </label>
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTerm72" checked onchange="updateTermVisibility()"> 72 งวด
+          </label>
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTerm84" checked onchange="updateTermVisibility()"> 84 งวด
+          </label>
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTerm99" checked onchange="updateTermVisibility()"> 99 งวด
+          </label>
+          <label class="text-sm sm:text-xs bg-white p-2 rounded-lg border border-gray-200 flex items-center gap-2 hover:bg-blue-50 active:bg-blue-100 touch-target">
+            <input type="checkbox" id="showTermCustom" checked onchange="updateTermVisibility()"> งวดกำหนดเอง
+          </label>
+      </div>
+  </div>
+</div>
                
             </div>
 
@@ -530,6 +568,11 @@
 id="inst99">
 0
 </td>
+</tr>
+<tr id="customTermRow" style="display:none;">
+<td><span id="customTermLabel">Custom</span></td>
+<td class="text-center text-gray-400"><span id="dispRateCustom">-</span></td>
+<td class="text-right font-bold text-gray-800" id="instCustom">0</td>
 </tr>
                             </tbody>
                         </table>
@@ -953,7 +996,13 @@ const accordCampaigns = [
                 vat: document.getElementById('vatFee').value,
                 acc: document.getElementById('accFee').value,
                 book: document.getElementById('bookingDeduct').value,
-                gift: document.getElementById('giftList').value
+                gift: document.getElementById('giftList').value,
+                showTerm48: document.getElementById('showTerm48').checked,
+                showTerm60: document.getElementById('showTerm60').checked,
+                showTerm72: document.getElementById('showTerm72').checked,
+                showTerm84: document.getElementById('showTerm84').checked,
+                showTerm99: document.getElementById('showTerm99').checked,
+                showTermCustom: document.getElementById('showTermCustom').checked
             };
             localStorage.setItem('quotationSession_v1', JSON.stringify(sessionData));
         }
@@ -986,6 +1035,12 @@ const accordCampaigns = [
                 if(s.intDiscount) document.getElementById('interestDiscount').value = s.intDiscount;
                 if(s.downAmount) document.getElementById('downAmount').value = s.downAmount;
                 if(s.downPercent) document.getElementById('downPercent').value = s.downPercent;
+                if(s.showTerm48 !== undefined) document.getElementById('showTerm48').checked = s.showTerm48;
+                if(s.showTerm60 !== undefined) document.getElementById('showTerm60').checked = s.showTerm60;
+                if(s.showTerm72 !== undefined) document.getElementById('showTerm72').checked = s.showTerm72;
+                if(s.showTerm84 !== undefined) document.getElementById('showTerm84').checked = s.showTerm84;
+                if(s.showTerm99 !== undefined) document.getElementById('showTerm99').checked = s.showTerm99;
+                if(s.showTermCustom !== undefined) document.getElementById('showTermCustom').checked = s.showTermCustom;
                 
                 if(s.reg) document.getElementById('regFee').value = s.reg;
                 if(s.ins) document.getElementById('insurance').value = s.ins;
@@ -1159,11 +1214,50 @@ if(camp.name.includes("เงินช่วย") && camp.finances && camp.finan
         function calculateInterestAuto() {
             const sIdx = document.getElementById('selectSeries').value; const campIdx = document.getElementById('selectCampaign').value; const downPct = parseFloat(document.getElementById('downPercent').value) || 0; const discount = parseFloat(document.getElementById('interestDiscount').value) || 0; 
             const finContainer = document.getElementById('financeSelectorContainer'); let useFinance = !finContainer.classList.contains('hidden'); let finIdx = document.getElementById('selectFinanceCo').value;
-            if(sIdx != -1 && campIdx != -1) { const camp = appData.series[sIdx].campaigns[campIdx]; let activeMatrix = camp.matrix; if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix; if(activeMatrix) { [48, 60, 72, 84, 99].forEach(t => { const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount); document.getElementById('rate'+t).value = r.toFixed(2); }); } }
+            if(sIdx != -1 && campIdx != -1) {
+                const camp = appData.series[sIdx].campaigns[campIdx];
+                let activeMatrix = camp.matrix;
+                if(useFinance && finIdx != null && camp.finances[finIdx]) activeMatrix = camp.finances[finIdx].matrix;
+
+                if(activeMatrix) {
+                    [48, 60, 72, 84, 99].forEach(t => {
+                        const r = Math.max(0, getInterestRate(activeMatrix, downPct, t) - discount);
+                        document.getElementById('rate'+t).value = r.toFixed(2);
+                    });
+
+                    const customTerm = parseInt(document.getElementById('customTerm').value) || 0;
+                    const rateCustomInput = document.getElementById('rateCustom');
+                    if(customTerm > 0) {
+                        if(!customRateManual || !rateCustomInput.value) {
+                            const r = Math.max(0, getInterestRate(activeMatrix, downPct, customTerm) - discount);
+                            rateCustomInput.value = r.toFixed(2);
+                            customRateManual = false;
+                        }
+                    } else {
+                        rateCustomInput.value = '';
+                        customRateManual = false;
+                    }
+                }
+            } else {
+                document.getElementById('rateCustom').value = '';
+                customRateManual = false;
+            }
             calculate(false);
         }
 
         let currentMode = 'finance';
+        let customRateManual = false;
+
+        function onCustomRateInput() {
+            customRateManual = true;
+            calculate(false);
+        }
+
+        function onCustomTermInput() {
+            customRateManual = false;
+            calculateInterestAuto();
+        }
+
         const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' }; // Modified year format
         // Thai Year Format Fix
         const date = new Date();
@@ -1328,6 +1422,28 @@ if(finSelect && finSelect.selectedIndex >= 0){
 
     document.getElementById('inst'+term).innerText = fmt(Math.round(monthly));
 });
+
+const customTerm = parseInt(document.getElementById('customTerm').value) || 0;
+const customRate = parseFloat(document.getElementById('rateCustom').value) || 0;
+const customTermRow = document.getElementById('customTermRow');
+
+if(customTerm > 0 && financeAmt > 0 && customRate > 0 && document.getElementById('showTermCustom').checked) {
+    customTermRow.style.display = '';
+    const yearFloat = customTerm / 12;
+    const yearLabel = Number.isInteger(yearFloat) ? yearFloat.toFixed(0) : (Math.round(yearFloat * 100) / 100).toString();
+    document.getElementById('customTermLabel').innerText = `${customTerm} งวด (${yearLabel} ปี)`;
+    document.getElementById('dispRateCustom').innerText = customRate.toFixed(2) + '%';
+
+    const interestTotalCustom = financeAmt * (customRate/100) * (customTerm/12);
+    const monthlyCustom = (financeAmt + interestTotalCustom) / customTerm;
+
+    document.getElementById('instCustom').innerText = fmt(Math.round(monthlyCustom));
+} else {
+    customTermRow.style.display = 'none';
+}
+
+updateTermVisibility();
+
                 document.getElementById('sumDown').innerText = fmt(downAmt);
                 const grandTotal = downAmt + reg + ins + red + adv + vat + acc - book - discount;
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
@@ -1345,6 +1461,26 @@ if(finSelect && finSelect.selectedIndex >= 0){
                 document.getElementById('grandTotal').innerText = fmt(grandTotal) + " บาท";
             }
             saveSession(); 
+        }
+
+        function updateTermVisibility() {
+            const terms = [48, 60, 72, 84, 99];
+            terms.forEach(term => {
+                const row = document.getElementById('inst'+term)?.closest('tr');
+                const show = document.getElementById('showTerm'+term)?.checked;
+                if(row) row.style.display = show ? '' : 'none';
+            });
+
+            const customTermRow = document.getElementById('customTermRow');
+            const customTerm = parseInt(document.getElementById('customTerm').value) || 0;
+            const customRate = parseFloat(document.getElementById('rateCustom').value) || 0;
+            const showCustom = document.getElementById('showTermCustom')?.checked;
+
+            if(customTerm > 0 && customRate > 0 && showCustom) {
+                if(customTermRow) customTermRow.style.display = '';
+            } else {
+                if(customTermRow) customTermRow.style.display = 'none';
+            }
         }
 
         function renderGifts() {
@@ -1366,7 +1502,7 @@ if(finSelect && finSelect.selectedIndex >= 0){
             if(tabName==='editor') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.remove('hidden'); }
             else if(tabName==='settings' || tabName==='interest' || tabName==='history') { btnBack.classList.add('hidden'); btnSave.classList.add('hidden'); btnGo.classList.add('hidden'); }
             else { 
-                updateFullModelName(); calculate(); renderGifts(); updateCustomerInfo(); 
+                updateFullModelName(); calculate(); updateTermVisibility(); renderGifts(); updateCustomerInfo(); 
                 btnBack.classList.remove('hidden'); btnSave.classList.remove('hidden'); btnGo.classList.add('hidden'); 
             }
             window.scrollTo(0,0);
