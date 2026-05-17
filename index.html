@@ -1168,7 +1168,100 @@ const accordCampaigns = [
         function deleteSeries(index) { if(confirm('ลบข้อมูลนี้?')) { appData.series.splice(index, 1); if(editSIdx === index) closeSeriesDetail(); saveData(); } }
         function editSeries(index) { editSIdx = index; document.getElementById('seriesDetailPanel').classList.remove('hidden'); document.getElementById('editingSeriesName').innerText = "จัดการ: " + appData.series[index].name; renderDetailLists(); document.getElementById('seriesDetailPanel').scrollIntoView({ behavior: 'smooth' }); }
         function closeSeriesDetail() { editSIdx = -1; document.getElementById('seriesDetailPanel').classList.add('hidden'); }
-        function renderDetailLists() { if(editSIdx === -1) return; const series = appData.series[editSIdx]; const subList = document.getElementById('subModelList'); subList.innerHTML = ''; series.subModels.forEach((sub, idx) => { subList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${sub.name} <span class="text-gray-400">(${fmt(sub.price)})</span></span><button onclick="deleteSubModel(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; }); const colorList = document.getElementById('colorList'); colorList.innerHTML = ''; series.colors.forEach((col, idx) => { colorList.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border-b text-sm"><span>${col.name} <span class="text-blue-500 text-xs">+${fmt(col.price)}</span></span><button onclick="deleteColor(${idx})" class="text-red-400"><i class="fa-solid fa-times"></i></button></div>`; }); }
+        // --- SUBMODEL & COLOR EDIT FEATURE ---
+        let editingSubModelIdx = -1;
+        let editingColorIdx = -1;
+        function renderDetailLists() {
+            if(editSIdx === -1) return;
+            const series = appData.series[editSIdx];
+            const subList = document.getElementById('subModelList');
+            subList.innerHTML = '';
+            series.subModels.forEach((sub, idx) => {
+                if(editingSubModelIdx === idx) {
+                    subList.innerHTML += `
+                    <div class="flex gap-2 items-center p-2 bg-yellow-50 border-b text-sm animate-fade-in">
+                        <input type="text" id="editSubName" class="input-mobile flex-1" value="${sub.name}" placeholder="ชื่อรุ่นย่อย">
+                        <input type="number" id="editSubPrice" class="input-mobile w-24 text-right" value="${sub.price}" placeholder="ราคา">
+                        <button onclick="saveEditSubModel(${idx})" class="bg-green-500 text-white px-3 rounded"><i class='fa-solid fa-check'></i></button>
+                        <button onclick="cancelEditSubModel()" class="bg-gray-200 text-gray-600 px-3 rounded"><i class='fa-solid fa-xmark'></i></button>
+                    </div>`;
+                } else {
+                    subList.innerHTML += `
+                    <div class="flex justify-between items-center p-2 bg-gray-50 border-b text-sm">
+                        <span>${sub.name} <span class="text-gray-400">(${fmt(sub.price)})</span></span>
+                        <div class="flex gap-1">
+                            <button onclick="startEditSubModel(${idx})" class="text-blue-500 hover:text-blue-700 px-2"><i class='fa-solid fa-pen'></i></button>
+                            <button onclick="deleteSubModel(${idx})" class="text-red-400 px-2"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </div>`;
+                }
+            });
+            const colorList = document.getElementById('colorList');
+            colorList.innerHTML = '';
+            series.colors.forEach((col, idx) => {
+                if(editingColorIdx === idx) {
+                    colorList.innerHTML += `
+                    <div class="flex gap-2 items-center p-2 bg-yellow-50 border-b text-sm animate-fade-in">
+                        <input type="text" id="editColorName" class="input-mobile flex-1" value="${col.name}" placeholder="ชื่อสี">
+                        <input type="number" id="editColorPrice" class="input-mobile w-20 text-right" value="${col.price}" placeholder="เพิ่ม">
+                        <button onclick="saveEditColor(${idx})" class="bg-green-500 text-white px-3 rounded"><i class='fa-solid fa-check'></i></button>
+                        <button onclick="cancelEditColor()" class="bg-gray-200 text-gray-600 px-3 rounded"><i class='fa-solid fa-xmark'></i></button>
+                    </div>`;
+                } else {
+                    colorList.innerHTML += `
+                    <div class="flex justify-between items-center p-2 bg-gray-50 border-b text-sm">
+                        <span>${col.name} <span class="text-blue-500 text-xs">+${fmt(col.price)}</span></span>
+                        <div class="flex gap-1">
+                            <button onclick="startEditColor(${idx})" class="text-blue-500 hover:text-blue-700 px-2"><i class='fa-solid fa-pen'></i></button>
+                            <button onclick="deleteColor(${idx})" class="text-red-400 px-2"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </div>`;
+                }
+            });
+        }
+
+        function startEditSubModel(idx) {
+            editingSubModelIdx = idx;
+            editingColorIdx = -1;
+            renderDetailLists();
+            setTimeout(() => {
+                document.getElementById('editSubName').focus();
+            }, 100);
+        }
+        function cancelEditSubModel() {
+            editingSubModelIdx = -1;
+            renderDetailLists();
+        }
+        function saveEditSubModel(idx) {
+            const name = document.getElementById('editSubName').value.trim();
+            const price = parseFloat(document.getElementById('editSubPrice').value);
+            if(!name || isNaN(price)) { alert('กรุณากรอกชื่อและราคาที่ถูกต้อง'); return; }
+            appData.series[editSIdx].subModels[idx].name = name;
+            appData.series[editSIdx].subModels[idx].price = price;
+            editingSubModelIdx = -1;
+            saveData();
+        }
+        function startEditColor(idx) {
+            editingColorIdx = idx;
+            editingSubModelIdx = -1;
+            renderDetailLists();
+            setTimeout(() => {
+                document.getElementById('editColorName').focus();
+            }, 100);
+        }
+        function cancelEditColor() {
+            editingColorIdx = -1;
+            renderDetailLists();
+        }
+        function saveEditColor(idx) {
+            const name = document.getElementById('editColorName').value.trim();
+            const price = parseFloat(document.getElementById('editColorPrice').value);
+            if(!name || isNaN(price)) { alert('กรุณากรอกชื่อและราคาที่ถูกต้อง'); return; }
+            appData.series[editSIdx].colors[idx].name = name;
+            appData.series[editSIdx].colors[idx].price = price;
+            editingColorIdx = -1;
+            saveData();
+        }
         function addSubModel() { if(editSIdx === -1) return; const name = document.getElementById('newSubName').value.trim(); const price = parseFloat(document.getElementById('newSubPrice').value); if(name && !isNaN(price)) { appData.series[editSIdx].subModels.push({ name, price }); document.getElementById('newSubName').value = ''; document.getElementById('newSubPrice').value = ''; saveData(); } }
         function deleteSubModel(idx) { appData.series[editSIdx].subModels.splice(idx, 1); saveData(); }
         function addColor() { if(editSIdx === -1) return; const name = document.getElementById('newColorName').value.trim(); const price = parseFloat(document.getElementById('newColorPrice').value) || 0; if(name) { appData.series[editSIdx].colors.push({ name, price }); document.getElementById('newColorName').value = ''; document.getElementById('newColorPrice').value = ''; saveData(); } }
